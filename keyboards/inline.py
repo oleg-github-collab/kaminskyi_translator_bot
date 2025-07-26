@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import DEEPL_LANGUAGES, MODELS
 
 def get_model_keyboard(user_lang: str = "en"):
+    """Клавіатура вибору моделі перекладу"""
     texts = {
         "uk": {"basic": "⚡ Kaminskyi Basic", "epic": "🎯 Kaminskyi Epic"},
         "en": {"basic": "⚡ Kaminskyi Basic", "epic": "🎯 Kaminskyi Epic"},
@@ -20,6 +21,7 @@ def get_model_keyboard(user_lang: str = "en"):
     return keyboard
 
 def get_language_keyboard():
+    """Клавіатура вибору мови"""
     keyboard = InlineKeyboardMarkup(row_width=2)
     buttons = []
     # Сортуємо мови для кращого відображення
@@ -43,6 +45,7 @@ def get_language_keyboard():
     return keyboard
 
 def get_continue_keyboard(user_lang: str = "en"):
+    """Клавіатура продовження роботи"""
     texts = {
         "uk": {"continue": "Продовжити переклад", "exit": "Вийти"},
         "en": {"continue": "Continue translation", "exit": "Exit"},
@@ -61,12 +64,13 @@ def get_continue_keyboard(user_lang: str = "en"):
     return keyboard
 
 def get_payment_keyboard(payment_url: str, user_lang: str = "en"):
+    """Клавіатура оплати"""
     texts = {
-        "uk": {"pay": "💳 Оплатити", "check": "🔄 Перевірити оплату"},
-        "en": {"pay": "💳 Pay", "check": "🔄 Check payment"},
-        "de": {"pay": "💳 Bezahlen", "check": "🔄 Zahlung prüfen"},
-        "fr": {"pay": "💳 Payer", "check": "🔄 Vérifier le paiement"},
-        "es": {"pay": "💳 Pagar", "check": "🔄 Verificar pago"}
+        "uk": {"pay": "💳 Оплатити зараз", "check": "🔄 Перевірити оплату"},
+        "en": {"pay": "💳 Pay now", "check": "🔄 Check payment"},
+        "de": {"pay": "💳 Jetzt bezahlen", "check": "🔄 Zahlung prüfen"},
+        "fr": {"pay": "💳 Payer maintenant", "check": "🔄 Vérifier le paiement"},
+        "es": {"pay": "💳 Pagar ahora", "check": "🔄 Verificar pago"}
     }
     
     lang_texts = texts.get(user_lang, texts["en"])
