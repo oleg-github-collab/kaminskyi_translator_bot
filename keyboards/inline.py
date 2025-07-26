@@ -37,7 +37,6 @@ def get_continue_keyboard(user_lang: str = "en"):
     )
     return keyboard
 
-# ДОДАНО ВІДСУТНЮ ФУНКЦІЮ
 def get_payment_keyboard():
     """Клавіатура оплати"""
     keyboard = InlineKeyboardMarkup(row_width=1)
@@ -45,7 +44,6 @@ def get_payment_keyboard():
     keyboard.add(InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
     return keyboard
 
-# ДОДАНО ВІДСУТНЮ ФУНКЦІЮ
 def get_file_action_keyboard():
     """Клавіатура дій з файлом"""
     keyboard = InlineKeyboardMarkup(row_width=1)
@@ -53,7 +51,6 @@ def get_file_action_keyboard():
     keyboard.add(InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
     return keyboard
 
-# ДОДАНО ВІДСУТНЮ ФУНКЦІЮ
 def get_payment_action_keyboard():
     """Клавіатура після оплати"""
     keyboard = InlineKeyboardMarkup(row_width=1)

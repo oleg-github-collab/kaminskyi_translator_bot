@@ -24,7 +24,12 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await TranslationStates.choosing_model.set()
         
         # Відправляємо привітання
-        welcome_message = "🎯 <b>Kaminskyi AI Translator</b>\n\nОберіть модель перекладу:"
+        welcome_message = """🎯 <b>Kaminskyi AI Translator</b>
+
+Професійний переклад документів з використанням штучного інтелекту.
+
+<b>Крок 1/5:</b> Оберіть модель перекладу:"""
+        
         await message.answer(welcome_message, parse_mode="HTML")
         
         # Відправляємо клавіатуру моделей
@@ -67,8 +72,15 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
         await TranslationStates.next()  # waiting_for_source_language
         logger.info(f"Стан змінено для користувача {callback.from_user.id}")
         
+        # Видаляємо попереднє повідомлення з кнопками
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        
         # Відправляємо вибір мови оригіналу
-        await callback.message.answer("📝 Оберіть мову оригіналу:")
+        model_name = "Kaminskyi Basic" if model == "basic" else "Kaminskyi Epic"
+        await callback.message.answer(f"✅ Обрано модель: <b>{model_name}</b>\n\n📝 <b>Крок 2/5:</b> Оберіть мову оригіналу:", parse_mode="HTML")
         keyboard = get_language_keyboard()
         await callback.message.answer("Виберіть мову:", reply_markup=keyboard)
         
@@ -77,6 +89,28 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
     except Exception as e:
         logger.error(f"КРИТИЧНА ПОМИЛКА в choose_model для користувача {callback.from_user.id}: {str(e)}", exc_info=True)
         await callback.answer("⚠️ Критична помилка вибору")
+
+async def upload_another(callback: types.CallbackQuery, state: FSMContext):
+    """ЗАВАНТАЖИТИ ІНШИЙ ФАЙЛ"""
+    try:
+        logger.info(f"=== ЗАВАНТАЖИТИ ІНШИЙ ФАЙЛ === User ID: {callback.from_user.id}")
+        await callback.answer()
+        
+        # Повне скидання
+        await state.finish()
+        await state.reset_data()
+        await TranslationStates.choosing_model.set()
+        
+        # Новий старт
+        await callback.message.answer("🔄 <b>Новий переклад</b>\n\n<b>Крок 1/5:</b> Оберіть модель:", parse_mode="HTML")
+        keyboard = get_model_keyboard("en")
+        await callback.message.answer("Виберіть модель:", reply_markup=keyboard)
+        
+        logger.info(f"=== НОВИЙ ПЕРЕКЛАД РОЗПОЧАТО === User ID: {callback.from_user.id}")
+        
+    except Exception as e:
+        logger.error(f"ПОМИЛКА в upload_another для користувача {callback.from_user.id}: {str(e)}", exc_info=True)
+        await callback.answer("⚠️ Помилка")
 
 async def continue_translate(callback: types.CallbackQuery, state: FSMContext):
     """ПРОДОВЖЕННЯ ПЕРЕКЛАДУ"""
@@ -90,7 +124,7 @@ async def continue_translate(callback: types.CallbackQuery, state: FSMContext):
         await TranslationStates.choosing_model.set()
         
         # Новий старт
-        await callback.message.answer("🎯 <b>Kaminskyi AI Translator</b>\n\nНовий переклад:")
+        await callback.message.answer("🎯 <b>Kaminskyi AI Translator</b>\n\n<b>Крок 1/5:</b> Оберіть модель:", parse_mode="HTML")
         keyboard = get_model_keyboard("en")
         await callback.message.answer("Виберіть модель:", reply_markup=keyboard)
         
@@ -108,7 +142,7 @@ async def exit_bot(callback: types.CallbackQuery, state: FSMContext):
         await state.finish()
         await state.reset_data()
         
-        await callback.message.answer("👋 Дякуємо! Повертайтесь: /start")
+        await callback.message.answer("👋 Дякуємо за використання Kaminskyi AI Translator!\n\nПовертайтесь знову: /start")
         
         logger.info(f"=== ВИХІД УСПІШНИЙ === User ID: {callback.from_user.id}")
         
@@ -124,16 +158,36 @@ def register_handlers_start(dp):
     dp.register_message_handler(cmd_start, commands=["start"], state="*")
     logger.info("Зареєстровано cmd_start")
     
-    # Вибір моделі - БЕЗ ОБМЕЖЕНЬ
-    dp.register_callback_query_handler(choose_model)
-    logger.info("Зареєстровано choose_model")
+    # Вибір моделі - З ПРАВИЛЬНИМИ ФІЛЬТРАМИ
+    dp.register_callback_query_handler(
+        choose_model,
+        lambda c: c.data and c.data.startswith("model_"),
+        state=TranslationStates.choosing_model
+    )
+    logger.info("Зареєстровано choose_model з фільтрами")
+    
+    # Завантажити інший файл
+    dp.register_callback_query_handler(
+        upload_another,
+        lambda c: c.data and c.data == "upload_another",
+        state="*"
+    )
+    logger.info("Зареєстровано upload_another")
     
     # Продовження
-    dp.register_callback_query_handler(continue_translate, lambda c: c.data and c.data == "continue_translate")
+    dp.register_callback_query_handler(
+        continue_translate,
+        lambda c: c.data and c.data == "continue_translate",
+        state="*"
+    )
     logger.info("Зареєстровано continue_translate")
     
     # Вихід
-    dp.register_callback_query_handler(exit_bot, lambda c: c.data and c.data == "exit")
+    dp.register_callback_query_handler(
+        exit_bot,
+        lambda c: c.data and c.data == "exit",
+        state="*"
+    )
     logger.info("Зареєстровано exit_bot")
     
     logger.info("=== УСІ HANDLER'И СТАРТУ ЗАРЕЄСТРОВАНО ===")
