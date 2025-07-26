@@ -32,7 +32,8 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
         user_lang = callback.from_user.language_code or "en"
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
-        await callback.message.edit_text(MESSAGES["choose_source_language"][user_lang])
+        await callback.message.edit_text(MESSAGES["choose_source_language"][user_lang], 
+                                       reply_markup=get_language_keyboard())
         log_user_action(callback.from_user.id, "selected_model", model)
     except Exception as e:
         logger.error(f"Error in choose_model for user {callback.from_user.id}: {str(e)}")
