@@ -2,7 +2,7 @@ import os
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from utils.file_utils import count_chars_in_file
-from utils.payment_utils import calculate_price
+from utils.payment_utils import calculate_price, create_payment_session
 from states import TranslationStates
 from locales.messages import MESSAGES
 from config import TEMP_DIR
@@ -12,13 +12,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def handle_file(message: types.Message, state: FSMContext):
-    """ПОВНА, ПЕРЕВІРЕНА обробка файлу"""
+    """Обробка файлу з реальною кнопкою оплати"""
     try:
         logger.info(f"File handler started for user {message.from_user.id}")
         
         # Перевірка наявності файлу
         if not message.document:
-            logger.warning(f"No document in message from user {message.from_user.id}")
             user_lang = message.from_user.language_code or "en"
             user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
             await message.answer(MESSAGES["error_file"][user_lang], parse_mode="HTML")
@@ -26,18 +25,14 @@ async def handle_file(message: types.Message, state: FSMContext):
         
         # Перевірка типу файлу
         file_extension = os.path.splitext(message.document.file_name)[1].lower()
-        logger.info(f"File extension: {file_extension} for user {message.from_user.id}")
-        
         if file_extension not in ['.txt', '.docx', '.pdf']:
-            logger.warning(f"Unsupported file type {file_extension} from user {message.from_user.id}")
             user_lang = message.from_user.language_code or "en"
             user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
             await message.answer(MESSAGES["error_file_type"][user_lang], parse_mode="HTML")
             return
         
-        # Перевірка розміру файлу (максимум 20 МБ)
-        if message.document.file_size > 20 * 1024 * 1024:  # 20 MB
-            logger.warning(f"File too large ({message.document.file_size}) from user {message.from_user.id}")
+        # Перевірка розміру файлу
+        if message.document.file_size > 20 * 1024 * 1024:
             await message.answer("⚠️ <b>Файл занадто великий</b>\nМаксимальний розмір: 20 МБ", parse_mode="HTML")
             return
         
@@ -52,55 +47,37 @@ async def handle_file(message: types.Message, state: FSMContext):
         unique_id = str(uuid.uuid4())[:8]
         file_path = f"{TEMP_DIR}/{message.from_user.id}_{unique_id}{file_extension}"
         
-        logger.info(f"Downloading file to {file_path} for user {message.from_user.id}")
-        
         # Завантаження файлу
         try:
             await message.answer("📊 Аналізую файл...")
             file_info = await message.bot.get_file(message.document.file_id)
             await message.bot.download_file(file_info.file_path, file_path)
-            logger.info(f"File downloaded successfully to {file_path}")
         except Exception as download_error:
             logger.error(f"Download error for user {message.from_user.id}: {str(download_error)}")
             await message.answer("⚠️ <b>Помилка завантаження файлу</b>\nСпробуйте надіслати файл ще раз.", parse_mode="HTML")
             return
         
-        # Перевірка чи файл існує і не порожній
-        if not os.path.exists(file_path):
-            logger.error(f"File not found after download: {file_path} for user {message.from_user.id}")
-            await message.answer("⚠️ <b>Файл не збережено</b>\nСпробуйте надіслати файл ще раз.", parse_mode="HTML")
-            return
-            
-        file_size = os.path.getsize(file_path)
-        if file_size == 0:
-            logger.error(f"Downloaded file is empty: {file_path} for user {message.from_user.id}")
+        # Перевірка файлу
+        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             await message.answer("⚠️ <b>Файл порожній</b>\nНадішліть файл з вмістом.", parse_mode="HTML")
             if os.path.exists(file_path):
                 os.remove(file_path)
             return
         
-        logger.info(f"File size: {file_size} bytes for user {message.from_user.id}")
-        
         # Підрахунок символів
         await message.answer("🔢 Підраховую символи...")
         char_count = count_chars_in_file(file_path)
         
-        logger.info(f"Character count result: {char_count} for user {message.from_user.id}")
-        
         if char_count is None or char_count == 0:
-            logger.warning(f"Zero or None character count for file {file_path} from user {message.from_user.id}")
             user_lang = message.from_user.language_code or "en"
             user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
             await message.answer(MESSAGES["error_file_read"][user_lang], parse_mode="HTML")
-            # Не видаляємо файл для діагностики
             return
         
         # Отримання моделі та розрахунок ціни
         user_data = await state.get_data()
         model = user_data.get('model', 'basic')
         price = calculate_price(char_count, model)
-        
-        logger.info(f"Price calculation: {char_count} chars, model {model}, price {price}€ for user {message.from_user.id}")
         
         # Збереження даних
         await state.update_data(
@@ -113,7 +90,7 @@ async def handle_file(message: types.Message, state: FSMContext):
         # Переходимо до наступного стану
         await TranslationStates.next()
         
-        # Відправка статистики
+        # Відправка статистики з кнопкою оплати
         user_lang = message.from_user.language_code or "en"
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
@@ -133,17 +110,39 @@ async def handle_file(message: types.Message, state: FSMContext):
         await message.answer("💳 <b>Розрахунок вартості:</b>", parse_mode="HTML")
         await message.answer(stats_message, parse_mode="HTML")
         
+        # СТВОРЮЄМО СПРАВЖНЮ КНОПКУ ОПЛАТИ
+        try:
+            # Створюємо сесію оплати
+            payment_url = create_payment_session(price, message.from_user.id, char_count, model)
+            
+            if payment_url:
+                # Створюємо клавіатуру з кнопкою оплати
+                payment_keyboard = types.InlineKeyboardMarkup()
+                payment_keyboard.add(types.InlineKeyboardButton("💳 Оплатити зараз", url=payment_url))
+                payment_keyboard.add(types.InlineKeyboardButton("🔄 Завантажити інший файл", callback_data="upload_another"))
+                payment_keyboard.add(types.InlineKeyboardButton("✅ Оплату здійснено", callback_data="payment_done"))
+                
+                await message.answer("Виберіть дію:", reply_markup=payment_keyboard)
+            else:
+                # Якщо не вдалося створити оплату, кнопка для тестування
+                test_keyboard = types.InlineKeyboardMarkup()
+                test_keyboard.add(types.InlineKeyboardButton("⏭ Продовжити без оплати (тест)", callback_data="payment_done"))
+                test_keyboard.add(types.InlineKeyboardButton("🔄 Завантажити інший файл", callback_data="upload_another"))
+                
+                await message.answer("⚠️ Тимчасові проблеми з оплатою. Можете продовжити тестово:", reply_markup=test_keyboard)
+                
+        except Exception as payment_error:
+            logger.error(f"Payment creation error for user {message.from_user.id}: {str(payment_error)}")
+            # Резервна клавіатура
+            backup_keyboard = types.InlineKeyboardMarkup()
+            backup_keyboard.add(types.InlineKeyboardButton("⏭ Продовжити без оплати (тест)", callback_data="payment_done"))
+            backup_keyboard.add(types.InlineKeyboardButton("🔄 Завантажити інший файл", callback_data="upload_another"))
+            
+            await message.answer("⚠️ Проблеми з системою оплати. Можете продовжити тестово:", reply_markup=backup_keyboard)
+        
         log_user_action(message.from_user.id, "uploaded_file", 
-                       f"chars: {char_count}, model: {model}, price: {price}€, size: {file_size}")
+                       f"chars: {char_count}, model: {model}, price: {price}€")
         
-        logger.info(f"File handling completed successfully for user {message.from_user.id}")
-        
-    except FileNotFoundError as e:
-        logger.error(f"FileNotFoundError for user {message.from_user.id}: {str(e)}")
-        await message.answer("⚠️ <b>Помилка файлу</b>\nФайл не знайдено. Спробуйте ще раз.", parse_mode="HTML")
-    except PermissionError as e:
-        logger.error(f"PermissionError for user {message.from_user.id}: {str(e)}")
-        await message.answer("⚠️ <b>Помилка доступу</b>\nНемає доступу до файлу.", parse_mode="HTML")
     except Exception as e:
         logger.error(f"CRITICAL ERROR in handle_file for user {message.from_user.id}: {str(e)}", exc_info=True)
         await message.answer("⚠️ <b>Критична помилка обробки</b>\nКоманда підтримки сповіщена.", parse_mode="HTML")
