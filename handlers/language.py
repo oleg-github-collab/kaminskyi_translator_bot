@@ -8,6 +8,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Виправлено імпорт
+from keyboards.inline import get_language_keyboard
+
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     try:
         await callback.answer()
@@ -43,6 +46,7 @@ async def choose_target_language(callback: types.CallbackQuery, state: FSMContex
         await callback.answer("⚠️ Помилка вибору мови.")
 
 def register_handlers_language(dp):
+    # Виправлено реєстрацію handler'ів
     dp.register_callback_query_handler(choose_source_language, 
                                     lambda c: c.data.startswith("model_"), 
                                     state=TranslationStates.choosing_model)

@@ -9,6 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def cmd_start(message: types.Message, state: FSMContext):
+    # Завжди починаємо з чистого стану
     await state.finish()
     user_lang = message.from_user.language_code or "en"
     user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
@@ -45,6 +46,8 @@ async def continue_translate(callback: types.CallbackQuery, state: FSMContext):
         user_lang = callback.from_user.language_code or "en"
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
+        # Завжди починаємо з чистого стану
+        await state.finish()
         await TranslationStates.choosing_model.set()
         await callback.message.edit_text(MESSAGES["start"][user_lang], parse_mode="HTML")
         await callback.message.answer("Оберіть модель:", reply_markup=get_model_keyboard(user_lang))
@@ -67,8 +70,13 @@ async def exit_bot(callback: types.CallbackQuery, state: FSMContext):
         logger.error(f"Error in exit_bot for user {callback.from_user.id}: {str(e)}")
         await callback.answer("⚠️ Помилка.")
 
+# Додано handler для випадку, коли користувач починає заново після виходу
+async def cmd_start_after_exit(message: types.Message, state: FSMContext):
+    await cmd_start(message, state)
+
 def register_handlers_start(dp):
-    dp.register_message_handler(cmd_start, commands=["start"])
+    dp.register_message_handler(cmd_start, commands=["start"], state="*")
+    dp.register_message_handler(cmd_start_after_exit, commands=["start"])
     dp.register_callback_query_handler(choose_model, lambda c: c.data.startswith("model_"), 
                                      state=TranslationStates.choosing_model)
     dp.register_callback_query_handler(continue_translate, lambda c: c.data == "continue_translate")
