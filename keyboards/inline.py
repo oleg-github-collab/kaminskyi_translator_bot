@@ -20,7 +20,7 @@ def get_model_keyboard(user_lang: str = "en"):
     return keyboard
 
 def get_language_keyboard():
-    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard = InlineKeyboardMarkup(row_width=3)
     buttons = []
     for code, name in sorted(DEEPL_LANGUAGES.items()):
         buttons.append(InlineKeyboardButton(text=name, callback_data=f"lang_{code}"))
