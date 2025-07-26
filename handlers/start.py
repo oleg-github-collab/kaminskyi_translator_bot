@@ -1,6 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from keyboards.inline import get_model_keyboard
+from keyboards.inline import get_model_keyboard, get_continue_keyboard, get_language_keyboard
 from states import TranslationStates
 from locales.messages import MESSAGES
 from utils.logger import log_user_action
@@ -15,9 +15,11 @@ async def cmd_start(message: types.Message, state: FSMContext):
     user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
     
     try:
-        await message.answer(MESSAGES["start"][user_lang], parse_mode="HTML")
+        welcome_message = MESSAGES["start"][user_lang]
+        await message.answer(welcome_message, parse_mode="HTML")
         await TranslationStates.choosing_model.set()
-        await message.answer("Оберіть модель:", reply_markup=get_model_keyboard(user_lang))
+        keyboard = get_model_keyboard(user_lang)
+        await message.answer("Оберіть модель:", reply_markup=keyboard)
         log_user_action(message.from_user.id, "started_bot", f"language: {user_lang}")
     except Exception as e:
         logger.error(f"Error in cmd_start for user {message.from_user.id}: {str(e)}")
@@ -26,15 +28,16 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
     try:
         await callback.answer()
-        model = callback.data.split("_")[1]
+        model = callback.data.split("_")[1]  # model_basic або model_epic
         await state.update_data(model=model)
-        await TranslationStates.next()
+        await TranslationStates.next()  # Переходимо до waiting_for_source_language
         
         user_lang = callback.from_user.language_code or "en"
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
-        await callback.message.edit_text(MESSAGES["choose_source_language"][user_lang], 
-                                       reply_markup=get_language_keyboard())
+        message_text = MESSAGES["choose_source_language"][user_lang]
+        keyboard = get_language_keyboard()
+        await callback.message.edit_text(message_text, reply_markup=keyboard)
         log_user_action(callback.from_user.id, "selected_model", model)
     except Exception as e:
         logger.error(f"Error in choose_model for user {callback.from_user.id}: {str(e)}")
@@ -49,8 +52,11 @@ async def continue_translate(callback: types.CallbackQuery, state: FSMContext):
         # Завжди починаємо з чистого стану
         await state.finish()
         await TranslationStates.choosing_model.set()
-        await callback.message.edit_text(MESSAGES["start"][user_lang], parse_mode="HTML")
-        await callback.message.answer("Оберіть модель:", reply_markup=get_model_keyboard(user_lang))
+        
+        welcome_message = MESSAGES["start"][user_lang]
+        await callback.message.edit_text(welcome_message, parse_mode="HTML")
+        keyboard = get_model_keyboard(user_lang)
+        await callback.message.answer("Оберіть модель:", reply_markup=keyboard)
         log_user_action(callback.from_user.id, "continued_translation")
     except Exception as e:
         logger.error(f"Error in continue_translate for user {callback.from_user.id}: {str(e)}")
@@ -64,7 +70,8 @@ async def exit_bot(callback: types.CallbackQuery, state: FSMContext):
         user_lang = callback.from_user.language_code or "en"
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
-        await callback.message.edit_text("👋 " + MESSAGES["thank_you"][user_lang].split('\n')[0])
+        exit_message = "👋 " + MESSAGES["thank_you"][user_lang].split('\n')[0]
+        await callback.message.edit_text(exit_message)
         log_user_action(callback.from_user.id, "exited_bot")
     except Exception as e:
         logger.error(f"Error in exit_bot for user {callback.from_user.id}: {str(e)}")
