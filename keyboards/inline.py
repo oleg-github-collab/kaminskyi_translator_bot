@@ -87,3 +87,11 @@ def get_payment_action_keyboard():
     keyboard.add(InlineKeyboardButton("✅ Продовжити", callback_data="payment_done"))
     keyboard.add(InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
     return keyboard
+
+# ДОДАНО ВІДСУТНЮ ФУНКЦІЮ
+def get_payment_keyboard():
+    """Клавіатура оплати (для сумісності)"""
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(InlineKeyboardButton("💳 Оплатити", callback_data="process_payment"))
+    keyboard.add(InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
+    return keyboard
