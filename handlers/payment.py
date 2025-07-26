@@ -1,82 +1,53 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
-from keyboards.inline import get_continue_keyboard
-from utils.payment_utils import check_payment_status
 import logging
 
 logger = logging.getLogger(__name__)
 
 async def process_payment(callback: types.CallbackQuery, state: FSMContext):
-    """Обробка кнопки оплати"""
+    """ОБРОБКА ОПЛАТИ"""
     try:
-        logger.info(f"=== ПРОЦЕС ОПЛАТИ === User: {callback.from_user.id}")
         await callback.answer()
         
-        user_data = await state.get_data()
-        price = user_data.get('price', 0)
+        # Переходимо до стану оплати
+        await TranslationStates.waiting_for_payment_confirmation.set()
         
-        await callback.message.answer(
-            f"💳 <b>Оплата {price} €</b>\n\n"
-            "Перейдіть за посиланням для оплати.\n"
-            "Після успішної оплати переклад почнеться автоматично.",
-            parse_mode="HTML"
-        )
+        # Заглушка для оплати
+        await callback.message.answer("💳 <b>Крок 5/5:</b> Оплата", parse_mode="HTML")
+        await callback.message.answer("⚠️ Система оплати в розробці. Натисніть кнопку нижче для продовження.")
+        
+        # Кнопка продовження без оплати (для тестування)
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.add(types.InlineKeyboardButton("⏭ Продовжити без оплати", callback_data="payment_done"))
+        keyboard.add(types.InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
+        
+        await callback.message.answer("Виберіть дію:", reply_markup=keyboard)
+        
+        logger.info(f"ОПЛАТА для користувача {callback.from_user.id}")
         
     except Exception as e:
-        logger.error(f"Помилка в process_payment: {str(e)}", exc_info=True)
-        await callback.answer("⚠️ Помилка оплати")
+        logger.error(f"ПОМИЛКА в process_payment: {str(e)}")
+        await callback.answer("⚠️ Помилка")
 
 async def payment_done(callback: types.CallbackQuery, state: FSMContext):
-    """Підтвердження оплати"""
+    """ОПЛАТА ЗДІЙСНЕНА"""
     try:
-        logger.info(f"=== ПІДТВЕРДЖЕННЯ ОПЛАТИ === User: {callback.from_user.id}")
         await callback.answer()
         
-        # Перевірка статусу оплати
-        user_data = await state.get_data()
+        # Переходимо до перекладу
+        await TranslationStates.translating.set()
         
-        # TODO: Тут має бути реальна перевірка оплати
-        payment_confirmed = True  # Заглушка
+        await callback.message.answer("✅ Оплата підтверджена!")
+        await callback.message.answer("🔄 Починаємо переклад файлу...")
         
-        if payment_confirmed:
-            await TranslationStates.translating.set()
-            await callback.message.answer("✅ <b>Оплата підтверджена!</b>\n\n⏳ Починаю переклад...", parse_mode="HTML")
-            
-            # TODO: Тут має бути виклик функції перекладу
-            # translation_result = await translate_file(user_data)
-            
-            # Імітація перекладу
-            await callback.message.answer("📄 <b>Переклад завершено!</b>\n\nФайл готовий до завантаження.", parse_mode="HTML")
-            
-            await TranslationStates.completed.set()
-            
-            # Кнопки для продовження
-            keyboard = get_continue_keyboard()
-            await callback.message.answer("Що далі?", reply_markup=keyboard)
-        else:
-            await callback.message.answer("⚠️ Оплата не підтверджена. Спробуйте ще раз.", parse_mode="HTML")
-            
+        logger.info(f"ОПЛАТА ПІДТВЕРДЖЕНА для користувача {callback.from_user.id}")
+        
     except Exception as e:
-        logger.error(f"Помилка в payment_done: {str(e)}", exc_info=True)
+        logger.error(f"ПОМИЛКА в payment_done: {str(e)}")
         await callback.answer("⚠️ Помилка")
 
 def register_handlers_payment(dp):
-    """Реєстрація обробників оплати"""
-    logger.info("=== РЕЄСТРАЦІЯ ОБРОБНИКІВ ОПЛАТИ ===")
-    
-    # Обробка кнопки оплати
-    dp.register_callback_query_handler(
-        process_payment,
-        lambda c: c.data and c.data == "process_payment",
-        state=TranslationStates.waiting_for_payment_confirmation
-    )
-    
-    # Підтвердження оплати
-    dp.register_callback_query_handler(
-        payment_done,
-        lambda c: c.data and c.data == "payment_done",
-        state=TranslationStates.waiting_for_payment_confirmation
-    )
-    
-    logger.info("=== ОБРОБНИКИ ОПЛАТИ ЗАРЕЄСТРОВАНО ===")
+    """РЕЄСТРАЦІЯ HANDLER'ІВ ОПЛАТИ"""
+    dp.register_callback_query_handler(process_payment, lambda c: c.data and c.data == "process_payment")
+    dp.register_callback_query_handler(payment_done, lambda c: c.data and c.data == "payment_done")
