@@ -65,3 +65,11 @@ if __name__ == '__main__':
         on_shutdown=on_shutdown,
         skip_updates=True
     )
+# Додайте це в bot.py для налагодження
+async def debug_callback(callback: types.CallbackQuery):
+    """Налагодження callback запитів"""
+    logger.info(f"Debug callback: {callback.data} from user {callback.from_user.id}")
+    await callback.answer("Debug: отримано " + str(callback.data))
+
+# Додайте це в register_all_handlers(dp):
+# dp.register_callback_query_handler(debug_callback, lambda c: True, state="*")    

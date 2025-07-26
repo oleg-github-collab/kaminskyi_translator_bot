@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     """Обробка вибору мови оригіналу"""
     try:
+        # Перевірка наявності даних
+        if not callback.data or not callback.data.startswith("lang_"):
+            await callback.answer("⚠️ Невірні дані", show_alert=True)
+            return
+            
         await callback.answer()
         
         # Отримуємо вибрану мову
@@ -40,6 +45,11 @@ async def choose_source_language(callback: types.CallbackQuery, state: FSMContex
 async def choose_target_language(callback: types.CallbackQuery, state: FSMContext):
     """Обробка вибору мови перекладу"""
     try:
+        # Перевірка наявності даних
+        if not callback.data or not callback.data.startswith("lang_"):
+            await callback.answer("⚠️ Невірні дані", show_alert=True)
+            return
+            
         await callback.answer()
         
         # Отримуємо вибрану мову

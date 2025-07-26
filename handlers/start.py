@@ -1,6 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from keyboards.inline import get_model_keyboard, get_continue_keyboard, get_language_keyboard
+from keyboards.inline import get_model_keyboard, get_language_keyboard
 from states import TranslationStates
 from locales.messages import MESSAGES
 from utils.logger import log_user_action
@@ -40,6 +40,11 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
     """Обробка вибору моделі перекладу"""
     try:
+        # Перевірка наявності даних
+        if not callback.data or not callback.data.startswith("model_"):
+            await callback.answer("⚠️ Невірні дані", show_alert=True)
+            return
+            
         await callback.answer()
         
         # Отримуємо вибрану модель
