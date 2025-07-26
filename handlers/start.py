@@ -27,7 +27,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         )
         await message.answer(welcome_message, parse_mode="HTML")
         
-        # Кнопки моделей
+        # Кнопки моделей - СТВОРЮЄМО ПРЯМО ТУТ
         keyboard = types.InlineKeyboardMarkup(row_width=1)
         keyboard.add(
             types.InlineKeyboardButton("⚡ Kaminskyi Basic", callback_data="model_basic"),
@@ -43,29 +43,35 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await message.answer("⚠️ Помилка. Спробуйте /start")
 
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
-    """ВИБІР МОДЕЛІ"""
+    """ВИБІР МОДЕЛІ - ЦЕ ГОЛОВНИЙ HANDLER"""
     try:
         logger.info(f"🔵 ВИБІР МОДЕЛІ: {callback.data} для користувача {callback.from_user.id}")
+        print(f"DEBUG: ВИБІР МОДЕЛІ ВИКЛИКАНО: {callback.data}")  # ДЕБАГ
         
         # Перевірка даних
-        if not callback.data or not callback.data.startswith("model_"):
-            logger.warning(f"⚠️ Неправильні дані від користувача {callback.from_user.id}: {callback.data}")
+        if not callback.data:
+            logger.warning(f"⚠️ ПУСТІ ДАНІ від користувача {callback.from_user.id}")
+            await callback.answer("⚠️ Помилка даних")
+            return
+            
+        if not callback.data.startswith("model_"):
+            logger.warning(f"⚠️ НЕПРАВИЛЬНІ ДАНІ: {callback.data} від користувача {callback.from_user.id}")
             await callback.answer("⚠️ Неправильні дані")
             return
         
         await callback.answer()
         
         # Отримуємо модель
-        model = callback.data.split("_")[1]
+        model = callback.data.split("_")[1]  # model_basic або model_epic
         await state.update_data(model=model)
         
         # Переходимо до наступного стану
-        await TranslationStates.next()
+        await TranslationStates.next()  # waiting_for_source_language
         
         # Відправляємо вибір мови оригіналу
         await callback.message.answer("<b>Крок 2/5:</b> Оберіть мову оригіналу:", parse_mode="HTML")
         
-        # Кнопки мов
+        # Кнопки мов - СТВОРЮЄМО ПРЯМО ТУТ
         keyboard = types.InlineKeyboardMarkup(row_width=3)
         keyboard.add(
             types.InlineKeyboardButton("🇺🇦 UKR", callback_data="lang_UK"),
@@ -109,6 +115,7 @@ async def continue_translate(callback: types.CallbackQuery, state: FSMContext):
         )
         await callback.message.answer(welcome_message, parse_mode="HTML")
         
+        # Кнопки моделей - СТВОРЮЄМО ПРЯМО ТУТ
         keyboard = types.InlineKeyboardMarkup(row_width=1)
         keyboard.add(
             types.InlineKeyboardButton("⚡ Kaminskyi Basic", callback_data="model_basic"),
@@ -139,8 +146,23 @@ async def exit_bot(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("⚠️ Помилка")
 
 def register_handlers_start(dp):
-    """РЕЄСТРАЦІЯ HANDLER'ІВ"""
+    """РЕЄСТРАЦІЯ HANDLER'ІВ - КЛЮЧОВЕ ВИПРАВЛЕННЯ"""
+    logger.info("=== РЕЄСТРАЦІЯ HANDLER'ІВ START ===")
+    
+    # Старт в будь-якому стані
     dp.register_message_handler(cmd_start, commands=["start"], state="*")
-    dp.register_callback_query_handler(choose_model)  # БЕЗ ОБМЕЖЕНЬ
+    logger.info("✅ Зареєстровано cmd_start")
+    
+    # Вибір моделі - БЕЗ ФІЛЬТРІВ (КЛЮЧОВЕ ВИПРАВЛЕННЯ)
+    dp.register_callback_query_handler(choose_model)
+    logger.info("✅ Зареєстровано choose_model")
+    
+    # Продовження
     dp.register_callback_query_handler(continue_translate, lambda c: c.data and c.data == "continue_translate")
+    logger.info("✅ Зареєстровано continue_translate")
+    
+    # Вихід
     dp.register_callback_query_handler(exit_bot, lambda c: c.data and c.data == "exit")
+    logger.info("✅ Зареєстровано exit_bot")
+    
+    logger.info("=== УСІ HANDLER'И START ЗАРЕЄСТРОВАНО ===")
