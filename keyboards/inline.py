@@ -1,6 +1,16 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import DEEPL_LANGUAGES, MODELS
 
+# Іконки прапорів для мов
+FLAG_ICONS = {
+    "BG": "🇧🇬", "CS": "🇨🇿", "DA": "🇩🇰", "DE": "🇩🇪", "EL": "🇬🇷",
+    "EN": "🇬🇧", "ES": "🇪🇸", "ET": "🇪🇪", "FI": "🇫🇮", "FR": "🇫🇷",
+    "HU": "🇭🇺", "ID": "🇮🇩", "IT": "🇮🇹", "JA": "🇯🇵", "KO": "🇰🇷",
+    "LT": "🇱🇹", "LV": "🇱🇻", "NB": "🇳🇴", "NL": "🇳🇱", "PL": "🇵🇱",
+    "PT": "🇵🇹", "RO": "🇷🇴", "RU": "🇷🇺", "SK": "🇸🇰", "SL": "🇸🇮",
+    "SV": "🇸🇪", "TR": "🇹🇷", "UK": "🇺🇦", "ZH": "🇨🇳"
+}
+
 def get_model_keyboard(user_lang: str = "en"):
     """Клавіатура вибору моделі перекладу"""
     texts = {
@@ -21,19 +31,24 @@ def get_model_keyboard(user_lang: str = "en"):
     return keyboard
 
 def get_language_keyboard():
-    """Клавіатура вибору мови"""
+    """Клавіатура вибору мови з іконками прапорів"""
     keyboard = InlineKeyboardMarkup(row_width=2)
-    buttons = []
-    sorted_languages = sorted(DEEPL_LANGUAGES.items())
+    sorted_languages = sorted(FLAG_ICONS.items())
     
     for i in range(0, len(sorted_languages), 2):
         row_buttons = []
+        # Перша мова в рядку
         if i < len(sorted_languages):
-            code1, name1 = sorted_languages[i]
-            row_buttons.append(InlineKeyboardButton(text=name1, callback_data=f"lang_{code1}"))
+            code, _ = sorted_languages[i]
+            language_name = DEEPL_LANGUAGES.get(code, code)
+            flag_icon = FLAG_ICONS.get(code, "🏳️")
+            row_buttons.append(InlineKeyboardButton(text=f"{flag_icon} {language_name}", callback_data=f"lang_{code}"))
+        # Друга мова в рядку
         if i + 1 < len(sorted_languages):
-            code2, name2 = sorted_languages[i + 1]
-            row_buttons.append(InlineKeyboardButton(text=name2, callback_data=f"lang_{code2}"))
+            code, _ = sorted_languages[i + 1]
+            language_name = DEEPL_LANGUAGES.get(code, code)
+            flag_icon = FLAG_ICONS.get(code, "🏳️")
+            row_buttons.append(InlineKeyboardButton(text=f"{flag_icon} {language_name}", callback_data=f"lang_{code}"))
         
         if row_buttons:
             keyboard.row(*row_buttons)
@@ -43,31 +58,32 @@ def get_language_keyboard():
 def get_continue_keyboard(user_lang: str = "en"):
     """Клавіатура продовження роботи"""
     texts = {
-        "uk": {"continue": "Продовжити переклад", "exit": "Вийти"},
-        "en": {"continue": "Continue translation", "exit": "Exit"},
-        "de": {"continue": "Übersetzung fortsetzen", "exit": "Beenden"},
-        "fr": {"continue": "Continuer la traduction", "exit": "Quitter"},
-        "es": {"continue": "Continuar traducción", "exit": "Salir"}
+        "uk": {"continue": "🔄 Новий переклад", "exit": "👋 Вийти"},
+        "en": {"continue": "🔄 New translation", "exit": "👋 Exit"},
+        "de": {"continue": "🔄 Neue Übersetzung", "exit": "👋 Beenden"},
+        "fr": {"continue": "🔄 Nouvelle traduction", "exit": "👋 Quitter"},
+        "es": {"continue": "🔄 Nueva traducción", "exit": "👋 Salir"}
     }
     
     lang_texts = texts.get(user_lang, texts["en"])
     
-    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
         InlineKeyboardButton(text=lang_texts["continue"], callback_data="continue_translate"),
         InlineKeyboardButton(text=lang_texts["exit"], callback_data="exit")
     )
     return keyboard
 
-def get_payment_keyboard():
-    """Клавіатура оплати"""
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    keyboard.add(InlineKeyboardButton("💳 Оплатити", callback_data="process_payment"))
-    return keyboard
-
 def get_file_action_keyboard():
     """Клавіатура дій з файлом"""
     keyboard = InlineKeyboardMarkup(row_width=1)
     keyboard.add(InlineKeyboardButton("💳 Оплатити", callback_data="process_payment"))
-    keyboard.add(InlineKeyboardButton("🔄 Завантажити інший файл", callback_data="upload_another"))
+    keyboard.add(InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
+    return keyboard
+
+def get_payment_action_keyboard():
+    """Клавіатура після оплати"""
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    keyboard.add(InlineKeyboardButton("✅ Продовжити", callback_data="payment_done"))
+    keyboard.add(InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
     return keyboard

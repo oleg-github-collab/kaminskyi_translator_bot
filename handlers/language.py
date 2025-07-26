@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     """Обробка вибору мови оригіналу"""
     try:
-        # Перевірка наявності даних
+        logger.info(f"Вибір мови оригіналу для користувача {callback.from_user.id}")
+        
+        # Перевірка даних
         if not callback.data or not callback.data.startswith("lang_"):
             await callback.answer("⚠️ Невірні дані", show_alert=True)
             return
@@ -32,20 +34,23 @@ async def choose_source_language(callback: types.CallbackQuery, state: FSMContex
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
         # Відправляємо повідомлення з вибором мови перекладу
-        message_text = "🎯 <b>Крок 3 з 5:</b> " + MESSAGES["choose_target_language"][user_lang]
+        message_text = "🎯 <b>Крок 3/5:</b> Мова перекладу"
         keyboard = get_language_keyboard()
         await callback.message.answer(message_text, reply_markup=keyboard, parse_mode="HTML")
         
         log_user_action(callback.from_user.id, "selected_source_language", language_code)
+        logger.info(f"Мова оригіналу {language_code} вибрана для користувача {callback.from_user.id}")
         
     except Exception as e:
-        logger.error(f"Error in choose_source_language for user {callback.from_user.id}: {str(e)}")
+        logger.error(f"ПОМИЛКА в choose_source_language для користувача {callback.from_user.id}: {str(e)}", exc_info=True)
         await callback.answer("⚠️ Помилка вибору мови", show_alert=True)
 
 async def choose_target_language(callback: types.CallbackQuery, state: FSMContext):
     """Обробка вибору мови перекладу"""
     try:
-        # Перевірка наявності даних
+        logger.info(f"Вибір мови перекладу для користувача {callback.from_user.id}")
+        
+        # Перевірка даних
         if not callback.data or not callback.data.startswith("lang_"):
             await callback.answer("⚠️ Невірні дані", show_alert=True)
             return
@@ -66,13 +71,14 @@ async def choose_target_language(callback: types.CallbackQuery, state: FSMContex
         user_lang = user_lang if user_lang in ["uk", "en", "de", "fr", "es"] else "en"
         
         # Відправляємо повідомлення про надсилання файлу
-        message_text = "🎯 <b>Крок 4 з 5:</b> " + MESSAGES["send_file"][user_lang]
+        message_text = "🎯 <b>Крок 4/5:</b> Надішліть файл\n📄 Підтримуються: TXT, DOCX, PDF"
         await callback.message.answer(message_text, parse_mode="HTML")
         
         log_user_action(callback.from_user.id, "selected_target_language", language_code)
+        logger.info(f"Мова перекладу {language_code} вибрана для користувача {callback.from_user.id}")
         
     except Exception as e:
-        logger.error(f"Error in choose_target_language for user {callback.from_user.id}: {str(e)}")
+        logger.error(f"ПОМИЛКА в choose_target_language для користувача {callback.from_user.id}: {str(e)}", exc_info=True)
         await callback.answer("⚠️ Помилка вибору мови", show_alert=True)
 
 def register_handlers_language(dp):
