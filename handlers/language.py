@@ -10,11 +10,15 @@ logger = logging.getLogger(__name__)
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОВИ ОРИГІНАЛУ"""
     try:
-        logger.info(f"Вибір мови оригіналу: {callback.data} для користувача {callback.from_user.id}")
+        logger.info(f"ВИБІР МОВИ ОРИГІНАЛУ: {callback.data} для користувача {callback.from_user.id}")
         
         # Перевірка даних
-        if not callback.data or not callback.data.startswith("lang_"):
-            await callback.answer("⚠️ Помилка даних", show_alert=True)
+        if not callback.data:
+            await callback.answer("⚠️ Помилка даних")
+            return
+            
+        if not callback.data.startswith("lang_"):
+            await callback.answer("⚠️ Неправильні дані")
             return
         
         await callback.answer()
@@ -35,16 +39,20 @@ async def choose_source_language(callback: types.CallbackQuery, state: FSMContex
         
     except Exception as e:
         logger.error(f"ПОМИЛКА в choose_source_language: {str(e)}")
-        await callback.answer("⚠️ Помилка", show_alert=True)
+        await callback.answer("⚠️ Помилка")
 
 async def choose_target_language(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОВИ ПЕРЕКЛАДУ"""
     try:
-        logger.info(f"Вибір мови перекладу: {callback.data} для користувача {callback.from_user.id}")
+        logger.info(f"ВИБІР МОВИ ПЕРЕКЛАДУ: {callback.data} для користувача {callback.from_user.id}")
         
         # Перевірка даних
-        if not callback.data or not callback.data.startswith("lang_"):
-            await callback.answer("⚠️ Помилка даних", show_alert=True)
+        if not callback.data:
+            await callback.answer("⚠️ Помилка даних")
+            return
+            
+        if not callback.data.startswith("lang_"):
+            await callback.answer("⚠️ Неправильні дані")
             return
         
         await callback.answer()
@@ -63,12 +71,12 @@ async def choose_target_language(callback: types.CallbackQuery, state: FSMContex
         
     except Exception as e:
         logger.error(f"ПОМИЛКА в choose_target_language: {str(e)}")
-        await callback.answer("⚠️ Помилка", show_alert=True)
+        await callback.answer("⚠️ Помилка")
 
 def register_handlers_language(dp):
     """РЕЄСТРАЦІЯ HANDLER'ІВ МОВ"""
-    # Вибір мови оригіналу - БЕЗ ОБМЕЖЕННЯ СТАНУ
-    dp.register_callback_query_handler(choose_source_language, lambda c: c.data and c.data.startswith("lang_"))
+    # Вибір мови оригіналу - БЕЗ ОБМЕЖЕНЬ
+    dp.register_callback_query_handler(choose_source_language)
     
-    # Вибір мови перекладу - БЕЗ ОБМЕЖЕННЯ СТАНУ
-    dp.register_callback_query_handler(choose_target_language, lambda c: c.data and c.data.startswith("lang_"))
+    # Вибір мови перекладу - БЕЗ ОБМЕЖЕНЬ
+    dp.register_callback_query_handler(choose_target_language)

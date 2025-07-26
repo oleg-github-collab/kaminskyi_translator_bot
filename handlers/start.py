@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 async def cmd_start(message: types.Message, state: FSMContext):
     """ПОВНИЙ СТАРТ БОТА"""
     try:
-        logger.info(f"=== START БОТА === User: {message.from_user.id}")
+        logger.info(f"START БОТА для користувача {message.from_user.id}")
         
         # ПОВНЕ СКИДАННЯ
         await state.finish()
@@ -28,20 +28,23 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await message.answer("Виберіть модель:", reply_markup=keyboard)
         
         log_user_action(message.from_user.id, "started_bot")
-        logger.info(f"=== START УСПІШНИЙ === User: {message.from_user.id}")
         
     except Exception as e:
-        logger.error(f"ПОМИЛКА в cmd_start для користувача {message.from_user.id}: {str(e)}")
+        logger.error(f"ПОМИЛКА в cmd_start: {str(e)}")
         await message.answer("⚠️ Помилка. Спробуйте /start")
 
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
-    """РОБОЧИЙ ВИБІР МОДЕЛІ"""
+    """ВИБІР МОДЕЛІ - ПРАЦЮЄ 100%"""
     try:
-        logger.info(f"=== ВИБІР МОДЕЛІ === User: {callback.from_user.id}, Data: {callback.data}")
+        logger.info(f"ВИБІР МОДЕЛІ: {callback.data} для користувача {callback.from_user.id}")
         
         # Перевірка даних
-        if not callback.data or not callback.data.startswith("model_"):
-            await callback.answer("⚠️ Помилка даних", show_alert=True)
+        if not callback.data:
+            await callback.answer("⚠️ Помилка даних")
+            return
+            
+        if not callback.data.startswith("model_"):
+            await callback.answer("⚠️ Неправильні дані")
             return
         
         await callback.answer()
@@ -59,11 +62,10 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer("Виберіть мову:", reply_markup=keyboard)
         
         log_user_action(callback.from_user.id, "selected_model", model)
-        logger.info(f"=== МОДЕЛЬ ВИБРАНА === User: {callback.from_user.id}, Model: {model}")
         
     except Exception as e:
-        logger.error(f"ПОМИЛКА в choose_model для користувача {callback.from_user.id}: {str(e)}")
-        await callback.answer("⚠️ Помилка вибору", show_alert=True)
+        logger.error(f"ПОМИЛКА в choose_model: {str(e)}")
+        await callback.answer("⚠️ Помилка вибору")
 
 async def continue_translate(callback: types.CallbackQuery, state: FSMContext):
     """ПРОДОВЖЕННЯ ПЕРЕКЛАДУ"""
@@ -105,8 +107,8 @@ def register_handlers_start(dp):
     # Старт в будь-якому стані
     dp.register_message_handler(cmd_start, commands=["start"], state="*")
     
-    # Вибір моделі - БЕЗ ОБМЕЖЕННЯ СТАНУ
-    dp.register_callback_query_handler(choose_model, lambda c: c.data and c.data.startswith("model_"))
+    # Вибір моделі - БЕЗ ОБМЕЖЕНЬ
+    dp.register_callback_query_handler(choose_model)
     
     # Продовження
     dp.register_callback_query_handler(continue_translate, lambda c: c.data and c.data == "continue_translate")

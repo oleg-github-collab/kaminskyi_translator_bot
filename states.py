@@ -7,5 +7,4 @@ class TranslationStates(StatesGroup):
     waiting_for_file = State()
     waiting_for_payment_confirmation = State()
     translating = State()
-    waiting_for_otranslator_completion = State()
     completed = State()
