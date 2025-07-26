@@ -1,6 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from keyboards.inline import get_model_keyboard, get_continue_keyboard
+from keyboards.inline import get_model_keyboard
 from states import TranslationStates
 from locales.messages import MESSAGES
 from utils.logger import log_user_action
@@ -70,13 +70,8 @@ async def exit_bot(callback: types.CallbackQuery, state: FSMContext):
         logger.error(f"Error in exit_bot for user {callback.from_user.id}: {str(e)}")
         await callback.answer("⚠️ Помилка.")
 
-# Додано handler для випадку, коли користувач починає заново після виходу
-async def cmd_start_after_exit(message: types.Message, state: FSMContext):
-    await cmd_start(message, state)
-
 def register_handlers_start(dp):
-    dp.register_message_handler(cmd_start, commands=["start"], state="*")
-    dp.register_message_handler(cmd_start_after_exit, commands=["start"])
+    dp.register_message_handler(cmd_start, commands=["start"])
     dp.register_callback_query_handler(choose_model, lambda c: c.data.startswith("model_"), 
                                      state=TranslationStates.choosing_model)
     dp.register_callback_query_handler(continue_translate, lambda c: c.data == "continue_translate")
