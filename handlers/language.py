@@ -39,10 +39,14 @@ def get_language_name(code):
 
 def get_flag(code: str) -> str:
     """Return emoji flag for language code"""
+
     code = code.split("-")[0].upper()
     if len(code) == 2 and code.isalpha():
         base = 0x1F1E6
         return chr(base + ord(code[0]) - 65) + chr(base + ord(code[1]) - 65)
+    code = code.split("-")[0]
+    if len(code) == 2:
+        return chr(0x1F1E6 + ord(code[0].upper()) - 65) + chr(0x1F1E6 + ord(code[1].upper()) - 65)
     return ""
 
 
@@ -181,4 +185,3 @@ def register_handlers_language(dp):
         lambda c: c.data and c.data.startswith("langpage_"),
         state=TranslationStates.waiting_for_target_language,
     )
-
