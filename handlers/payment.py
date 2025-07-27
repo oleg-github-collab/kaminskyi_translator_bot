@@ -3,6 +3,7 @@ from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
 from utils.payment_utils import create_payment_session, verify_payment
+from handlers.translate import start_translation
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,10 @@ async def payment_done(callback: types.CallbackQuery, state: FSMContext):
         logger.info(
             f"✅ ОПЛАТА підтверджена для користувача {callback.from_user.id}"
         )
-        
+
+        # Запускаємо переклад автоматично
+        await start_translation(callback.message, state)
+
     except Exception as e:
         logger.error(f"❌ ПОМИЛКА в payment_done для користувача {callback.from_user.id}: {str(e)}")
         await callback.answer("⚠️ Помилка")
