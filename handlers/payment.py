@@ -2,6 +2,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
+from utils.payment_utils import create_payment_session
 from utils.payment_utils import create_payment_session, verify_payment
 from handlers.translate import start_translation
 
@@ -39,9 +40,6 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
             types.InlineKeyboardButton(
                 "💳 Перейти до оплати", url=session_url
             )
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("✅ Я оплатив", callback_data="payment_done")
         )
         keyboard.add(
             types.InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another")
@@ -109,11 +107,6 @@ def register_handlers_payment(dp):
     dp.register_callback_query_handler(
         process_payment,
         lambda c: c.data == "process_payment",
-        state=TranslationStates.waiting_for_payment_confirmation,
-    )
-    dp.register_callback_query_handler(
-        payment_done,
-        lambda c: c.data == "payment_done",
         state=TranslationStates.waiting_for_payment_confirmation,
     )
     dp.register_callback_query_handler(
