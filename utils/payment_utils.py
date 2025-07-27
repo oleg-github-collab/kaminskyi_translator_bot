@@ -68,5 +68,4 @@ def verify_payment(session_id: str) -> dict:
     except Exception as e:
         logger.error(f"Error verifying payment {session_id}: {str(e)}")
         log_error(e, "verify_payment")
-
         return {'paid': False, 'metadata': {}}

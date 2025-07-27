@@ -18,6 +18,20 @@ LANGUAGE_NAMES.update(fetch_otranslator_languages())
 LANGUAGE_CODES = sorted(LANGUAGE_NAMES.keys())
 LANGUAGES_PER_PAGE = 9
 
+# Map language codes to appropriate flag codes
+FLAG_OVERRIDES = {
+    "EN": "US",  # show US flag for English
+    "UK": "UA",   # Ukrainian
+    "PT": "PT",
+    "PT-BR": "BR",
+    "ZH": "CN",
+    "JA": "JP",
+    "KO": "KR",
+    "AR": "SA",
+    "HE": "IL",
+    "HI": "IN",
+}
+
 # Fallback minimal set if APIs fail
 if not LANGUAGE_NAMES:
     LANGUAGE_NAMES = {
@@ -40,6 +54,13 @@ def get_language_name(code):
 def get_flag(code: str) -> str:
     """Return emoji flag for language code"""
 
+    base_code = code.split("-")[0].upper()
+    flag_code = FLAG_OVERRIDES.get(base_code, base_code)
+    if len(flag_code) == 2 and flag_code.isalpha():
+        base = 0x1F1E6
+        return chr(base + ord(flag_code[0]) - 65) + chr(base + ord(flag_code[1]) - 65)
+
+
     code = code.split("-")[0].upper()
     if len(code) == 2 and code.isalpha():
         base = 0x1F1E6
@@ -47,6 +68,7 @@ def get_flag(code: str) -> str:
     code = code.split("-")[0]
     if len(code) == 2:
         return chr(0x1F1E6 + ord(code[0].upper()) - 65) + chr(0x1F1E6 + ord(code[1].upper()) - 65)
+
     return ""
 
 
@@ -184,4 +206,3 @@ def register_handlers_language(dp):
         switch_language_page,
         lambda c: c.data and c.data.startswith("langpage_"),
         state=TranslationStates.waiting_for_target_language,
-    )
