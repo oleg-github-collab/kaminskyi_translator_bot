@@ -2,24 +2,39 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
+from utils.translate_utils import fetch_deepl_languages, fetch_otranslator_languages
 
 logger = logging.getLogger(__name__)
 
-# Helper функція для назв мов
-LANGUAGE_NAMES = {
-    "UK": "Українська",
-    "EN": "English",
-    "DE": "Deutsch",
-    "FR": "Français",
-    "ES": "Español",
-    "PL": "Polski",
-    "RU": "Русский",
-    "ZH": "中文",
-    "JA": "日本語"
-}
+# Languages will be fetched from APIs
+LANGUAGE_NAMES = {}
+LANGUAGE_NAMES.update(fetch_deepl_languages())
+LANGUAGE_NAMES.update(fetch_otranslator_languages())
+
+# Fallback minimal set if APIs fail
+if not LANGUAGE_NAMES:
+    LANGUAGE_NAMES = {
+        "UK": "Українська",
+        "EN": "English",
+        "DE": "Deutsch",
+        "FR": "Français",
+        "ES": "Español",
+        "PL": "Polski",
+        "RU": "Русский",
+        "ZH": "中文",
+        "JA": "日本語",
+    }
 
 def get_language_name(code):
     return LANGUAGE_NAMES.get(code, code)
+
+
+def build_language_keyboard() -> types.InlineKeyboardMarkup:
+    """Створює клавіатуру з усіма доступними мовами"""
+    keyboard = types.InlineKeyboardMarkup(row_width=3)
+    for code, name in LANGUAGE_NAMES.items():
+        keyboard.insert(types.InlineKeyboardButton(name, callback_data=f"lang_{code}"))
+    return keyboard
 
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОВИ ОРИГІНАЛУ"""
@@ -49,23 +64,7 @@ async def choose_source_language(callback: types.CallbackQuery, state: FSMContex
         await callback.message.answer("<b>Крок 3/5:</b> Оберіть мову перекладу:", parse_mode="HTML")
         
         # Кнопки мов
-        keyboard = types.InlineKeyboardMarkup(row_width=3)
-        keyboard.add(
-            types.InlineKeyboardButton("🇺🇦 UKR", callback_data="lang_UK"),
-            types.InlineKeyboardButton("🇬🇧 ENG", callback_data="lang_EN"),
-            types.InlineKeyboardButton("🇩🇪 GER", callback_data="lang_DE")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇫🇷 FRA", callback_data="lang_FR"),
-            types.InlineKeyboardButton("🇪🇸 SPA", callback_data="lang_ES"),
-            types.InlineKeyboardButton("🇵🇱 POL", callback_data="lang_PL")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇷🇺 RUS", callback_data="lang_RU"),
-            types.InlineKeyboardButton("🇨🇳 CHN", callback_data="lang_ZH"),
-            types.InlineKeyboardButton("🇯🇵 JPN", callback_data="lang_JA")
-        )
-        
+        keyboard = build_language_keyboard()
         await callback.message.answer("Виберіть мову:", reply_markup=keyboard)
         
         logger.info(f"✅ МОВА ОРИГІНАЛУ {language_code} вибрана для користувача {callback.from_user.id}")

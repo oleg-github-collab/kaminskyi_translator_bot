@@ -1,6 +1,7 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
+from handlers.language import build_language_keyboard
 import logging
 
 logger = logging.getLogger(__name__)
@@ -71,24 +72,8 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
         # Відправляємо вибір мови оригіналу
         await callback.message.answer("<b>Крок 2/5:</b> Оберіть мову оригіналу:", parse_mode="HTML")
         
-        # Кнопки мов - СТВОРЮЄМО ПРЯМО ТУТ
-        keyboard = types.InlineKeyboardMarkup(row_width=3)
-        keyboard.add(
-            types.InlineKeyboardButton("🇺🇦 UKR", callback_data="lang_UK"),
-            types.InlineKeyboardButton("🇬🇧 ENG", callback_data="lang_EN"),
-            types.InlineKeyboardButton("🇩🇪 GER", callback_data="lang_DE")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇫🇷 FRA", callback_data="lang_FR"),
-            types.InlineKeyboardButton("🇪🇸 SPA", callback_data="lang_ES"),
-            types.InlineKeyboardButton("🇵🇱 POL", callback_data="lang_PL")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇷🇺 RUS", callback_data="lang_RU"),
-            types.InlineKeyboardButton("🇨🇳 CHN", callback_data="lang_ZH"),
-            types.InlineKeyboardButton("🇯🇵 JPN", callback_data="lang_JA")
-        )
-        
+        # Динамічні кнопки мов
+        keyboard = build_language_keyboard()
         await callback.message.answer("Виберіть мову:", reply_markup=keyboard)
         
         logger.info(f"✅ МОДЕЛЬ {model} вибрана для користувача {callback.from_user.id}")

@@ -2,6 +2,8 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
+from utils.file_utils import count_chars_in_file
+from utils.payment_utils import calculate_price
 import os
 
 logger = logging.getLogger(__name__)
@@ -53,13 +55,15 @@ async def handle_file(message: types.Message, state: FSMContext):
         await message.answer(f"🔤 Переклад: {source_name} → {target_name}")
         await message.answer(f"⚙️ Модель: {model_name}")
         
-        # Імітація обробки
+        # Аналіз файлу
         await message.answer("📊 Аналізую файл...")
-        await message.answer("🔢 Підраховую символи...")
-        
+        char_count = count_chars_in_file(file_path)
+        price = calculate_price(char_count, model)
+        await state.update_data(char_count=char_count, price=price)
+
         # Відображаємо статистику
         await message.answer("💳 <b>Розрахунок вартості:</b>", parse_mode="HTML")
-        await message.answer("• Символів: 514\n• Вартість: 0.65 €")
+        await message.answer(f"• Символів: {char_count}\n• Вартість: {price} €")
         
         # Кнопки оплати
         keyboard = types.InlineKeyboardMarkup()
