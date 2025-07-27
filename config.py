@@ -13,7 +13,10 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 OTRANSLATOR_API_KEY = os.getenv("OTRANSLATOR_API_KEY")
 
 # Webhook
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:8000/webhook")
+WEBHOOK_URL = os.getenv(
+    "WEBHOOK_URL",
+    "https://kaminskyitranslatorbot-production.up.railway.app",
+)
 PORT = int(os.getenv("PORT", 8000))
 
 # Languages
