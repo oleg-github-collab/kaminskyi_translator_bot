@@ -3,6 +3,8 @@ from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
 import os
+from models import translate_basic, translate_epic
+from utils.logger import log_translation, log_error
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +20,32 @@ async def start_translation(message: types.Message, state: FSMContext):
         source_lang = user_data.get('source_language')
         target_lang = user_data.get('target_language')
         model = user_data.get('model', 'basic')
+        char_count = user_data.get('char_count', 0)
+        price = user_data.get('price', 0.0)
+        logger.debug(
+            f"Translation params for {message.from_user.id}: file={file_path}, src={source_lang}, tgt={target_lang}, model={model}, chars={char_count}, price={price}"
+        )
         
         if not file_path or not os.path.exists(file_path):
             await message.answer("⚠️ Файл не знайдено")
             return
         
+        progress_msg = await message.answer("🔄 Перекладаємо файл... 0%")
+
+        async def progress(percent: int):
+            try:
+                await progress_msg.edit_text(f"🔄 Перекладаємо файл... {percent}%")
+            except Exception:
+                pass
+
+        if model == 'basic':
+            translated_path = await translate_basic(
+                file_path, source_lang, target_lang, file_extension, progress
+            )
+        else:
+            translated_path = await translate_epic(
+                file_path, source_lang, target_lang, file_extension, progress
+            )
         # Імітація перекладу
         await message.answer("🔄 Перекладаємо файл...")
         await message.answer("⏳ Це може зайняти кілька секунд...")
@@ -41,11 +64,21 @@ async def start_translation(message: types.Message, state: FSMContext):
         with open(translated_path, 'wb') as f:
             f.write(f"[ПЕРЕКЛАД] {content}".encode('utf-8'))
         
-        # Відправляємо файл
+        try:
+            await progress_msg.edit_text("✅ Переклад завершено!")
+        except Exception:
+            pass
+
+        try:
+            await progress_msg.delete()
+        except Exception:
+            pass
+
         await message.answer_document(
             open(translated_path, 'rb'),
             caption="✅ Переклад завершено!"
         )
+        log_translation(message.from_user.id, model, char_count, price)
         
         # Очищуємо тимчасові файли
         try:
@@ -70,7 +103,10 @@ async def start_translation(message: types.Message, state: FSMContext):
         logger.info(f"✅ ПЕРЕКЛАД завершено для користувача {message.from_user.id}")
         
     except Exception as e:
-        logger.error(f"❌ ПОМИЛКА в start_translation для користувача {message.from_user.id}: {str(e)}")
+        logger.error(
+            f"❌ ПОМИЛКА в start_translation для користувача {message.from_user.id}: {str(e)}"
+        )
+        log_error(e, "start_translation")
         await message.answer("⚠️ Помилка перекладу")
 
 def register_handlers_translate(dp):

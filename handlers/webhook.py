@@ -2,6 +2,7 @@ from aiohttp import web
 import stripe
 import config
 import logging
+from utils.logger import log_user_action, log_payment, log_error
 from utils.logger import log_user_action
 from states import TranslationStates
 from handlers.translate import start_translation
@@ -29,21 +30,26 @@ async def stripe_webhook(request):
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             user_id = int(session['metadata'].get('user_id', 0))
+            amount = session['amount_total'] / 100
+            logger.info(f"Payment completed for user {user_id} amount {amount}€")
+            log_user_action(user_id, "payment_completed", f"amount: {amount}€")
+            log_payment(user_id, amount, "paid")
             logger.info(f"Payment completed for user {user_id}")
             log_user_action(user_id, "payment_completed", f"amount: {session['amount_total']/100}€")
-
             dp = request.app['dp']
             bot = dp.bot
             state = dp.current_state(chat=user_id, user=user_id)
             await state.set_state(TranslationStates.translating.state)
             await bot.send_message(user_id, "✅ Оплата підтверджена!")
             start_msg = await bot.send_message(user_id, "🔄 Починаємо переклад файлу...")
+            logger.info(f"Starting translation for user {user_id}")
             await start_translation(start_msg, state)
         
         return web.Response(status=200)
         
     except Exception as e:
         logger.error(f"Error in stripe webhook: {str(e)}")
+        log_error(e, "stripe_webhook")
         return web.Response(status=500)
 
 async def success_page(request):

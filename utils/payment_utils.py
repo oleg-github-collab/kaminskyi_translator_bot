@@ -2,6 +2,7 @@ import stripe
 import config
 import logging
 from typing import Optional
+from utils.logger import log_payment, log_error
 
 logger = logging.getLogger(__name__)
 stripe.api_key = config.STRIPE_SECRET_KEY
@@ -49,9 +50,11 @@ def create_payment_session(
         logger.info(
             f"Created payment session for user {user_id}, amount: {amount_eur}€, model: {model}"
         )
+        log_payment(user_id, amount_eur, "created")
         return session.url, session.id
     except Exception as e:
         logger.error(f"Error creating payment session for user {user_id}: {str(e)}")
+        log_error(e, "create_payment_session")
         return None
 
 def verify_payment(session_id: str) -> dict:
