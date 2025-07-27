@@ -16,7 +16,9 @@ def calculate_price(chars: int, model: str) -> float:
     price = units * price_per_unit
     return round(max(price, min_price), 2)
 
-def create_payment_session(amount_eur: float, user_id: int, char_count: int, model: str) -> Optional[str]:
+def create_payment_session(
+    amount_eur: float, user_id: int, char_count: int, model: str
+) -> Optional[tuple]:
     """Create Stripe payment session"""
     try:
         model_name = config.MODELS[model]["name"]
@@ -44,8 +46,10 @@ def create_payment_session(amount_eur: float, user_id: int, char_count: int, mod
                 'model': model
             }
         )
-        logger.info(f"Created payment session for user {user_id}, amount: {amount_eur}€, model: {model}")
-        return session.url
+        logger.info(
+            f"Created payment session for user {user_id}, amount: {amount_eur}€, model: {model}"
+        )
+        return session.url, session.id
     except Exception as e:
         logger.error(f"Error creating payment session for user {user_id}: {str(e)}")
         return None

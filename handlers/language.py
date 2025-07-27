@@ -2,24 +2,82 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
+from utils.translate_utils import (
+    fetch_deepl_languages,
+    fetch_otranslator_languages,
+)
+import math
 
 logger = logging.getLogger(__name__)
 
-# Helper функція для назв мов
-LANGUAGE_NAMES = {
-    "UK": "Українська",
-    "EN": "English",
-    "DE": "Deutsch",
-    "FR": "Français",
-    "ES": "Español",
-    "PL": "Polski",
-    "RU": "Русский",
-    "ZH": "中文",
-    "JA": "日本語"
-}
+# Languages will be fetched from APIs
+LANGUAGE_NAMES = {}
+LANGUAGE_NAMES.update(fetch_deepl_languages())
+LANGUAGE_NAMES.update(fetch_otranslator_languages())
+
+LANGUAGE_CODES = sorted(LANGUAGE_NAMES.keys())
+LANGUAGES_PER_PAGE = 9
+
+# Fallback minimal set if APIs fail
+if not LANGUAGE_NAMES:
+    LANGUAGE_NAMES = {
+        "UK": "Українська",
+        "EN": "English",
+        "DE": "Deutsch",
+        "FR": "Français",
+        "ES": "Español",
+        "PL": "Polski",
+        "RU": "Русский",
+        "ZH": "中文",
+        "JA": "日本語",
+    }
+LANGUAGE_CODES = sorted(LANGUAGE_NAMES.keys())
 
 def get_language_name(code):
     return LANGUAGE_NAMES.get(code, code)
+
+
+def get_flag(code: str) -> str:
+    """Return emoji flag for language code"""
+    code = code.split("-")[0]
+    if len(code) == 2:
+        return chr(0x1F1E6 + ord(code[0].upper()) - 65) + chr(0x1F1E6 + ord(code[1].upper()) - 65)
+    return ""
+
+
+def build_language_keyboard() -> types.InlineKeyboardMarkup:
+    """Клавіатура мов для першої сторінки"""
+    return build_language_keyboard_page(0)
+
+
+def build_language_keyboard_page(page: int) -> types.InlineKeyboardMarkup:
+    keyboard = types.InlineKeyboardMarkup(row_width=3)
+    subset = LANGUAGE_CODES[page * LANGUAGES_PER_PAGE:(page + 1) * LANGUAGES_PER_PAGE]
+    for code in subset:
+        name = LANGUAGE_NAMES[code]
+        flag = get_flag(code)
+        keyboard.insert(types.InlineKeyboardButton(f"{flag} {name}", callback_data=f"lang_{code}"))
+
+    total_pages = int(math.ceil(len(LANGUAGE_CODES) / LANGUAGES_PER_PAGE))
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(types.InlineKeyboardButton("⬅️", callback_data=f"langpage_{page-1}"))
+    if page < total_pages - 1:
+        nav_buttons.append(types.InlineKeyboardButton("➡️", callback_data=f"langpage_{page+1}"))
+    if nav_buttons:
+        keyboard.row(*nav_buttons)
+    return keyboard
+
+
+async def switch_language_page(callback: types.CallbackQuery, state: FSMContext):
+    """Перемикання сторінок мов"""
+    await callback.answer()
+    page = int(callback.data.split("_")[1])
+    keyboard = build_language_keyboard_page(page)
+    try:
+        await callback.message.edit_reply_markup(reply_markup=keyboard)
+    except Exception:
+        await callback.message.reply("Виберіть мову:", reply_markup=keyboard)
 
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОВИ ОРИГІНАЛУ"""
@@ -49,23 +107,7 @@ async def choose_source_language(callback: types.CallbackQuery, state: FSMContex
         await callback.message.answer("<b>Крок 3/5:</b> Оберіть мову перекладу:", parse_mode="HTML")
         
         # Кнопки мов
-        keyboard = types.InlineKeyboardMarkup(row_width=3)
-        keyboard.add(
-            types.InlineKeyboardButton("🇺🇦 UKR", callback_data="lang_UK"),
-            types.InlineKeyboardButton("🇬🇧 ENG", callback_data="lang_EN"),
-            types.InlineKeyboardButton("🇩🇪 GER", callback_data="lang_DE")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇫🇷 FRA", callback_data="lang_FR"),
-            types.InlineKeyboardButton("🇪🇸 SPA", callback_data="lang_ES"),
-            types.InlineKeyboardButton("🇵🇱 POL", callback_data="lang_PL")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇷🇺 RUS", callback_data="lang_RU"),
-            types.InlineKeyboardButton("🇨🇳 CHN", callback_data="lang_ZH"),
-            types.InlineKeyboardButton("🇯🇵 JPN", callback_data="lang_JA")
-        )
-        
+        keyboard = build_language_keyboard()
         await callback.message.answer("Виберіть мову:", reply_markup=keyboard)
         
         logger.info(f"✅ МОВА ОРИГІНАЛУ {language_code} вибрана для користувача {callback.from_user.id}")
@@ -118,5 +160,23 @@ async def choose_target_language(callback: types.CallbackQuery, state: FSMContex
 
 def register_handlers_language(dp):
     """РЕЄСТРАЦІЯ HANDLER'ІВ МОВ"""
-    dp.register_callback_query_handler(choose_source_language)  # БЕЗ ОБМЕЖЕНЬ
-    dp.register_callback_query_handler(choose_target_language)  # БЕЗ ОБМЕЖЕНЬ
+    dp.register_callback_query_handler(
+        choose_source_language,
+        lambda c: c.data and c.data.startswith("lang_"),
+        state=TranslationStates.waiting_for_source_language,
+    )
+    dp.register_callback_query_handler(
+        choose_target_language,
+        lambda c: c.data and c.data.startswith("lang_"),
+        state=TranslationStates.waiting_for_target_language,
+    )
+    dp.register_callback_query_handler(
+        switch_language_page,
+        lambda c: c.data and c.data.startswith("langpage_"),
+        state=TranslationStates.waiting_for_source_language,
+    )
+    dp.register_callback_query_handler(
+        switch_language_page,
+        lambda c: c.data and c.data.startswith("langpage_"),
+        state=TranslationStates.waiting_for_target_language,
+    )

@@ -2,6 +2,8 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
+from utils.payment_utils import create_payment_session, verify_payment
+from handlers.translate import start_translation
 
 logger = logging.getLogger(__name__)
 
@@ -11,19 +13,41 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
         logger.info(f"💳 ОБРОБКА ОПЛАТИ для користувача {callback.from_user.id}")
         await callback.answer()
         
-        # Переходимо до стану оплати
-        await TranslationStates.waiting_for_payment_confirmation.set()
-        
-        # Заглушка для оплати
-        await callback.message.answer("💳 <b>Крок 5/5:</b> Оплата", parse_mode="HTML")
-        await callback.message.answer("⚠️ Система оплати в розробці. Натисніть кнопку нижче для продовження.")
-        
-        # Кнопка продовження без оплати (для тестування)
+        # Дані для оплати
+        user_data = await state.get_data()
+        price = user_data.get("price", 0.0)
+        char_count = user_data.get("char_count", 0)
+        model = user_data.get("model", "basic")
+
+        session_url, session_id = create_payment_session(
+            price, callback.from_user.id, char_count, model
+        ) or (None, None)
+
+        if not session_url:
+            await callback.message.answer("⚠️ Не вдалося створити сесію оплати")
+            return
+
+        await state.update_data(payment_session=session_id)
+
+        await callback.message.answer(
+            "💳 <b>Крок 5/5:</b> Оплата",
+            parse_mode="HTML",
+        )
+
         keyboard = types.InlineKeyboardMarkup()
-        keyboard.add(types.InlineKeyboardButton("⏭ Продовжити без оплати", callback_data="payment_done"))
-        keyboard.add(types.InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another"))
-        
-        await callback.message.answer("Виберіть дію:", reply_markup=keyboard)
+        keyboard.add(
+            types.InlineKeyboardButton(
+                "💳 Перейти до оплати", url=session_url
+            )
+        )
+        keyboard.add(
+            types.InlineKeyboardButton("✅ Я оплатив", callback_data="payment_done")
+        )
+        keyboard.add(
+            types.InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another")
+        )
+
+        await callback.message.answer("Натисніть кнопку, щоб оплатити", reply_markup=keyboard)
         
         logger.info(f"✅ ОПЛАТА ініційована для користувача {callback.from_user.id}")
         
@@ -34,16 +58,31 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
 async def payment_done(callback: types.CallbackQuery, state: FSMContext):
     """ОПЛАТА ЗДІЙСНЕНА"""
     try:
-        logger.info(f"✅ ОПЛАТА ПІДТВЕРДЖЕНА для користувача {callback.from_user.id}")
         await callback.answer()
-        
-        # Переходимо до перекладу
+
+        data = await state.get_data()
+        session_id = data.get("payment_session")
+
+        if not session_id:
+            await callback.message.answer("⚠️ Сесію оплати не знайдено")
+            return
+
+        result = verify_payment(session_id)
+        if not result.get("paid"):
+            await callback.message.answer("⚠️ Оплата ще не підтверджена")
+            return
+
         await TranslationStates.translating.set()
-        
+
         await callback.message.answer("✅ Оплата підтверджена!")
         await callback.message.answer("🔄 Починаємо переклад файлу...")
-        
-        logger.info(f"✅ ОПЛАТА підтверджена для користувача {callback.from_user.id}")
+
+        logger.info(
+            f"✅ ОПЛАТА підтверджена для користувача {callback.from_user.id}"
+        )
+
+        # Запускаємо переклад автоматично
+        await start_translation(callback.message, state)
         
     except Exception as e:
         logger.error(f"❌ ПОМИЛКА в payment_done для користувача {callback.from_user.id}: {str(e)}")
@@ -67,6 +106,18 @@ async def upload_another(callback: types.CallbackQuery, state: FSMContext):
 
 def register_handlers_payment(dp):
     """РЕЄСТРАЦІЯ HANDLER'ІВ ОПЛАТИ"""
-    dp.register_callback_query_handler(process_payment, lambda c: c.data and c.data == "process_payment")
-    dp.register_callback_query_handler(payment_done, lambda c: c.data and c.data == "payment_done")
-    dp.register_callback_query_handler(upload_another, lambda c: c.data and c.data == "upload_another")
+    dp.register_callback_query_handler(
+        process_payment,
+        lambda c: c.data == "process_payment",
+        state=TranslationStates.waiting_for_payment_confirmation,
+    )
+    dp.register_callback_query_handler(
+        payment_done,
+        lambda c: c.data == "payment_done",
+        state=TranslationStates.waiting_for_payment_confirmation,
+    )
+    dp.register_callback_query_handler(
+        upload_another,
+        lambda c: c.data == "upload_another",
+        state=TranslationStates.waiting_for_payment_confirmation,
+    )
