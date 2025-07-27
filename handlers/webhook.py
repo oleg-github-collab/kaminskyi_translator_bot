@@ -20,6 +20,7 @@ from utils.logger import log_user_action
 
 
 
+
 from states import TranslationStates
 from handlers.translate import start_translation
 
@@ -52,6 +53,7 @@ async def stripe_webhook(request):
             log_payment(user_id, amount, "paid")
             logger.info(f"Payment completed for user {user_id}")
             log_user_action(user_id, "payment_completed", f"amount: {session['amount_total']/100}€")
+
 
 
 
