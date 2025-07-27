@@ -13,7 +13,10 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 OTRANSLATOR_API_KEY = os.getenv("OTRANSLATOR_API_KEY")
 
 # Webhook
-WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:8000/webhook")
+WEBHOOK_URL = os.getenv(
+    "WEBHOOK_URL",
+    "https://kaminskyitranslatorbot-production.up.railway.app",
+)
 PORT = int(os.getenv("PORT", 8000))
 
 # Languages
@@ -26,6 +29,50 @@ DEEPL_LANGUAGES = {
     "PT": "Portuguese", "RO": "Romanian", "RU": "Russian", "SK": "Slovak",
     "SL": "Slovenian", "SV": "Swedish", "TR": "Turkish", "UK": "Ukrainian",
     "ZH": "Chinese"
+}
+
+# Fallback languages for O*Translator if API call fails
+OTRANSLATOR_LANGUAGES = {
+    "AR": "Arabic",
+    "BE": "Belarusian",
+    "BG": "Bulgarian",
+    "CS": "Czech",
+    "DA": "Danish",
+    "DE": "German",
+    "EL": "Greek",
+    "EN": "English",
+    "ES": "Spanish",
+    "ET": "Estonian",
+    "FI": "Finnish",
+    "FR": "French",
+    "HE": "Hebrew",
+    "HI": "Hindi",
+    "HR": "Croatian",
+    "HU": "Hungarian",
+    "ID": "Indonesian",
+    "IT": "Italian",
+    "JA": "Japanese",
+    "KA": "Georgian",
+    "KK": "Kazakh",
+    "KO": "Korean",
+    "LT": "Lithuanian",
+    "LV": "Latvian",
+    "NB": "Norwegian",
+    "NL": "Dutch",
+    "PL": "Polish",
+    "PT": "Portuguese",
+    "RO": "Romanian",
+    "RU": "Russian",
+    "SK": "Slovak",
+    "SL": "Slovenian",
+    "SR": "Serbian",
+    "SV": "Swedish",
+    "TH": "Thai",
+    "TR": "Turkish",
+    "UK": "Ukrainian",
+    "UZ": "Uzbek",
+    "VI": "Vietnamese",
+    "ZH": "Chinese",
 }
 
 INTERFACE_LANGUAGES = {
