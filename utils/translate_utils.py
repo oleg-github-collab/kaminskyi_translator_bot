@@ -54,6 +54,9 @@ def translate_text_deepl(text: str, target_lang: str, source_lang: str = None) -
 
 def fetch_deepl_languages() -> Dict[str, str]:
     """Fetch available target languages from DeepL"""
+    if not config.DEEPL_API_KEY:
+        return config.DEEPL_LANGUAGES
+
     try:
         response = requests.get(
             "https://api-free.deepl.com/v2/languages",
@@ -66,17 +69,21 @@ def fetch_deepl_languages() -> Dict[str, str]:
                 lang["language"].upper(): lang.get("name", lang["language"])
                 for lang in response.json()
             }
-            return languages
+            return languages or config.DEEPL_LANGUAGES
         logger.error(
             f"Failed to fetch DeepL languages: {response.status_code} {response.text}"
         )
     except Exception as e:
         logger.error(f"Error fetching DeepL languages: {str(e)}")
-    return {}
+
+    return config.DEEPL_LANGUAGES
 
 
 def fetch_otranslator_languages() -> Dict[str, str]:
     """Fetch available languages from O*Translator"""
+    if not config.OTRANSLATOR_API_KEY:
+        return config.OTRANSLATOR_LANGUAGES
+
     try:
         response = requests.get(
             f"{config.OTRANSLATOR_API_URL}/languages",
@@ -89,10 +96,10 @@ def fetch_otranslator_languages() -> Dict[str, str]:
                 item["code"].upper(): item.get("name", item["code"])
                 for item in data.get("languages", [])
             }
-            return languages
+            return languages or config.OTRANSLATOR_LANGUAGES
         logger.error(
             f"Failed to fetch OTranslator languages: {response.status_code} {response.text}"
         )
     except Exception as e:
         logger.error(f"Error fetching OTranslator languages: {str(e)}")
-    return {}
+
