@@ -153,8 +153,12 @@ def register_handlers_start(dp):
     dp.register_message_handler(cmd_start, commands=["start"], state="*")
     logger.info("✅ Зареєстровано cmd_start")
     
-    # Вибір моделі - БЕЗ ФІЛЬТРІВ (КЛЮЧОВЕ ВИПРАВЛЕННЯ)
-    dp.register_callback_query_handler(choose_model)
+    # Вибір моделі
+    dp.register_callback_query_handler(
+        choose_model,
+        lambda c: c.data and c.data.startswith("model_"),
+        state=TranslationStates.choosing_model,
+    )
     logger.info("✅ Зареєстровано choose_model")
     
     # Продовження

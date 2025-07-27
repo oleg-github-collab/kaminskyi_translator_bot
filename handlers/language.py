@@ -118,5 +118,13 @@ async def choose_target_language(callback: types.CallbackQuery, state: FSMContex
 
 def register_handlers_language(dp):
     """РЕЄСТРАЦІЯ HANDLER'ІВ МОВ"""
-    dp.register_callback_query_handler(choose_source_language)  # БЕЗ ОБМЕЖЕНЬ
-    dp.register_callback_query_handler(choose_target_language)  # БЕЗ ОБМЕЖЕНЬ
+    dp.register_callback_query_handler(
+        choose_source_language,
+        lambda c: c.data and c.data.startswith("lang_"),
+        state=TranslationStates.waiting_for_source_language,
+    )
+    dp.register_callback_query_handler(
+        choose_target_language,
+        lambda c: c.data and c.data.startswith("lang_"),
+        state=TranslationStates.waiting_for_target_language,
+    )

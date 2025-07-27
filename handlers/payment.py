@@ -67,6 +67,18 @@ async def upload_another(callback: types.CallbackQuery, state: FSMContext):
 
 def register_handlers_payment(dp):
     """РЕЄСТРАЦІЯ HANDLER'ІВ ОПЛАТИ"""
-    dp.register_callback_query_handler(process_payment, lambda c: c.data and c.data == "process_payment")
-    dp.register_callback_query_handler(payment_done, lambda c: c.data and c.data == "payment_done")
-    dp.register_callback_query_handler(upload_another, lambda c: c.data and c.data == "upload_another")
+    dp.register_callback_query_handler(
+        process_payment,
+        lambda c: c.data == "process_payment",
+        state=TranslationStates.waiting_for_payment_confirmation,
+    )
+    dp.register_callback_query_handler(
+        payment_done,
+        lambda c: c.data == "payment_done",
+        state=TranslationStates.waiting_for_payment_confirmation,
+    )
+    dp.register_callback_query_handler(
+        upload_another,
+        lambda c: c.data == "upload_another",
+        state=TranslationStates.waiting_for_payment_confirmation,
+    )
