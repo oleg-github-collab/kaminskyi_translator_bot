@@ -17,9 +17,11 @@ WEBHOOK_URL = os.getenv(
     "WEBHOOK_URL",
     "https://kaminskyitranslatorbot-production.up.railway.app",
 )
+
 # Some environments may include '/webhook' in WEBHOOK_URL from older configs
 if WEBHOOK_URL.endswith("/webhook"):
     WEBHOOK_URL = WEBHOOK_URL.rsplit("/webhook", 1)[0]
+
 PORT = int(os.getenv("PORT", 8000))
 
 # Languages
