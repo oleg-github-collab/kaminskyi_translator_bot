@@ -2,7 +2,7 @@ import requests
 import time
 import config
 import logging
-from typing import Optional
+from typing import Optional, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +50,49 @@ def translate_text_deepl(text: str, target_lang: str, source_lang: str = None) -
     except Exception as e:
         logger.error(f"Unexpected error during DeepL translation: {str(e)}")
         raise Exception(f"Помилка перекладу: {str(e)}")
+
+
+def fetch_deepl_languages() -> Dict[str, str]:
+    """Fetch available target languages from DeepL"""
+    try:
+        response = requests.get(
+            "https://api-free.deepl.com/v2/languages",
+            params={"type": "target"},
+            headers={"Authorization": f"DeepL-Auth-Key {config.DEEPL_API_KEY}"},
+            timeout=30,
+        )
+        if response.status_code == 200:
+            languages = {
+                lang["language"].upper(): lang.get("name", lang["language"])
+                for lang in response.json()
+            }
+            return languages
+        logger.error(
+            f"Failed to fetch DeepL languages: {response.status_code} {response.text}"
+        )
+    except Exception as e:
+        logger.error(f"Error fetching DeepL languages: {str(e)}")
+    return {}
+
+
+def fetch_otranslator_languages() -> Dict[str, str]:
+    """Fetch available languages from O*Translator"""
+    try:
+        response = requests.get(
+            f"{config.OTRANSLATOR_API_URL}/languages",
+            headers={"Authorization": f"Bearer {config.OTRANSLATOR_API_KEY}"},
+            timeout=30,
+        )
+        if response.status_code == 200:
+            data = response.json()
+            languages = {
+                item["code"].upper(): item.get("name", item["code"])
+                for item in data.get("languages", [])
+            }
+            return languages
+        logger.error(
+            f"Failed to fetch OTranslator languages: {response.status_code} {response.text}"
+        )
+    except Exception as e:
+        logger.error(f"Error fetching OTranslator languages: {str(e)}")
+    return {}
