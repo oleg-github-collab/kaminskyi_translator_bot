@@ -180,4 +180,3 @@ def register_handlers_language(dp):
         lambda c: c.data and c.data.startswith("langpage_"),
         state=TranslationStates.waiting_for_target_language,
     )
-

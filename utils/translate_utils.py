@@ -102,5 +102,5 @@ def fetch_otranslator_languages() -> Dict[str, str]:
         )
     except Exception as e:
         logger.error(f"Error fetching OTranslator languages: {str(e)}")
-
     return config.OTRANSLATOR_LANGUAGES
+    return {}
