@@ -34,7 +34,7 @@ register_all_handlers(dp)
 
 # Setup web server for webhooks
 app = web.Application()
-setup_webhooks(app)
+setup_webhooks(app, dp)
 
 # Налагодження callback запитів
 async def debug_callback(callback: types.CallbackQuery):

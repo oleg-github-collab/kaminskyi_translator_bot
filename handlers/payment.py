@@ -2,8 +2,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
-from utils.payment_utils import create_payment_session, verify_payment
-from handlers.translate import start_translation
+from utils.payment_utils import create_payment_session
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +40,6 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
             )
         )
         keyboard.add(
-            types.InlineKeyboardButton("✅ Я оплатив", callback_data="payment_done")
-        )
-        keyboard.add(
             types.InlineKeyboardButton("🔄 Інший файл", callback_data="upload_another")
         )
 
@@ -55,38 +51,6 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
         logger.error(f"❌ ПОМИЛКА в process_payment для користувача {callback.from_user.id}: {str(e)}")
         await callback.answer("⚠️ Помилка")
 
-async def payment_done(callback: types.CallbackQuery, state: FSMContext):
-    """ОПЛАТА ЗДІЙСНЕНА"""
-    try:
-        await callback.answer()
-
-        data = await state.get_data()
-        session_id = data.get("payment_session")
-
-        if not session_id:
-            await callback.message.answer("⚠️ Сесію оплати не знайдено")
-            return
-
-        result = verify_payment(session_id)
-        if not result.get("paid"):
-            await callback.message.answer("⚠️ Оплата ще не підтверджена")
-            return
-
-        await TranslationStates.translating.set()
-
-        await callback.message.answer("✅ Оплата підтверджена!")
-        await callback.message.answer("🔄 Починаємо переклад файлу...")
-
-        logger.info(
-            f"✅ ОПЛАТА підтверджена для користувача {callback.from_user.id}"
-        )
-
-        # Запускаємо переклад автоматично
-        await start_translation(callback.message, state)
-
-    except Exception as e:
-        logger.error(f"❌ ПОМИЛКА в payment_done для користувача {callback.from_user.id}: {str(e)}")
-        await callback.answer("⚠️ Помилка")
 
 async def upload_another(callback: types.CallbackQuery, state: FSMContext):
     """ЗАВАНТАЖИТИ ІНШИЙ ФАЙЛ"""
@@ -109,11 +73,6 @@ def register_handlers_payment(dp):
     dp.register_callback_query_handler(
         process_payment,
         lambda c: c.data == "process_payment",
-        state=TranslationStates.waiting_for_payment_confirmation,
-    )
-    dp.register_callback_query_handler(
-        payment_done,
-        lambda c: c.data == "payment_done",
         state=TranslationStates.waiting_for_payment_confirmation,
     )
     dp.register_callback_query_handler(

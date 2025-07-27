@@ -3,6 +3,8 @@ import stripe
 import config
 import logging
 from utils.logger import log_user_action
+from states import TranslationStates
+from handlers.translate import start_translation
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +28,17 @@ async def stripe_webhook(request):
         # Handle the event
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
-            user_id = session['metadata'].get('user_id')
+            user_id = int(session['metadata'].get('user_id', 0))
             logger.info(f"Payment completed for user {user_id}")
             log_user_action(user_id, "payment_completed", f"amount: {session['amount_total']/100}€")
+
+            dp = request.app['dp']
+            bot = dp.bot
+            state = dp.current_state(chat=user_id, user=user_id)
+            await state.set_state(TranslationStates.translating.state)
+            await bot.send_message(user_id, "✅ Оплата підтверджена!")
+            start_msg = await bot.send_message(user_id, "🔄 Починаємо переклад файлу...")
+            await start_translation(start_msg, state)
         
         return web.Response(status=200)
         
@@ -50,8 +60,9 @@ async def cancel_page(request):
         log_user_action(user_id, "payment_redirect_cancelled")
     return web.Response(text="Payment cancelled. You can close this window and return to the bot.")
 
-def setup_webhooks(app):
+def setup_webhooks(app, dp):
     """Setup webhook routes"""
+    app['dp'] = dp
     app.router.add_post('/webhook/stripe', stripe_webhook)
     app.router.add_get('/success', success_page)
     app.router.add_get('/cancel', cancel_page)
