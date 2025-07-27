@@ -3,6 +3,7 @@ from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 import logging
 import os
+from models import translate_basic, translate_epic
 
 logger = logging.getLogger(__name__)
 
@@ -23,21 +24,33 @@ async def start_translation(message: types.Message, state: FSMContext):
             await message.answer("⚠️ Файл не знайдено")
             return
         
-        # Імітація перекладу
-        await message.answer("🔄 Перекладаємо файл...")
-        await message.answer("⏳ Це може зайняти кілька секунд...")
+        progress_msg = await message.answer("🔄 Перекладаємо файл... 0%")
+
+        async def progress(percent: int):
+            try:
+                await progress_msg.edit_text(f"🔄 Перекладаємо файл... {percent}%")
+            except Exception:
+                pass
+
+        if model == 'basic':
+            translated_path = await translate_basic(
+                file_path, source_lang, target_lang, file_extension, progress
+            )
+        else:
+            translated_path = await translate_epic(
+                file_path, source_lang, target_lang, file_extension, progress
+            )
         
-        # Створюємо фейковий перекладений файл
-        translated_path = file_path.replace(file_extension, f"_translated{file_extension}")
-        
-        # Для тестування - копіюємо оригінал
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        with open(translated_path, 'w', encoding='utf-8') as f:
-            f.write(f"[ПЕРЕКЛАД] {content}")
-        
-        # Відправляємо файл
+        try:
+            await progress_msg.edit_text("✅ Переклад завершено!")
+        except Exception:
+            pass
+
+        try:
+            await progress_msg.delete()
+        except Exception:
+            pass
+
         await message.answer_document(
             open(translated_path, 'rb'),
             caption="✅ Переклад завершено!"
