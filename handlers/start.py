@@ -46,8 +46,9 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОДЕЛІ - ЦЕ ГОЛОВНИЙ HANDLER"""
     try:
-        logger.info(f"🔵 ВИБІР МОДЕЛІ: {callback.data} для користувача {callback.from_user.id}")
-        print(f"DEBUG: ВИБІР МОДЕЛІ ВИКЛИКАНО: {callback.data}")  # ДЕБАГ
+        logger.info(
+            f"🔵 ВИБІР МОДЕЛІ: {callback.data} для користувача {callback.from_user.id}"
+        )
         
         # Перевірка даних
         if not callback.data:
