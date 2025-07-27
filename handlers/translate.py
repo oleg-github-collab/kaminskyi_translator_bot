@@ -31,11 +31,15 @@ async def start_translation(message: types.Message, state: FSMContext):
         translated_path = file_path.replace(file_extension, f"_translated{file_extension}")
         
         # Для тестування - копіюємо оригінал
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        with open(file_path, 'rb') as f:
+            raw = f.read()
+        try:
+            content = raw.decode('utf-8')
+        except Exception:
+            content = raw.decode('utf-8', errors='ignore')
         
-        with open(translated_path, 'w', encoding='utf-8') as f:
-            f.write(f"[ПЕРЕКЛАД] {content}")
+        with open(translated_path, 'wb') as f:
+            f.write(f"[ПЕРЕКЛАД] {content}".encode('utf-8'))
         
         # Відправляємо файл
         await message.answer_document(
