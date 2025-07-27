@@ -64,8 +64,6 @@ async def start_translation(message: types.Message, state: FSMContext):
         
         with open(translated_path, 'wb') as f:
             f.write(f"[ПЕРЕКЛАД] {content}".encode('utf-8'))
-
-
         
         try:
             await progress_msg.edit_text("✅ Переклад завершено!")
