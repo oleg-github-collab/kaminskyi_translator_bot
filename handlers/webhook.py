@@ -5,11 +5,13 @@ import logging
 from utils.logger import log_user_action, log_payment, log_error
 from states import TranslationStates
 from handlers.translate import start_translation
+import asyncio
 from states import TranslationStates
 from handlers.translate import start_translation
 from states import TranslationStates
 from handlers.translate import start_translation
 from utils.logger import log_user_action
+
 
 
 
@@ -43,11 +45,24 @@ async def stripe_webhook(request):
             session = event['data']['object']
             user_id = int(session['metadata'].get('user_id', 0))
             amount = session['amount_total'] / 100
+
+            # Ensure payment was actually completed
+            payment_status = session.get('payment_status')
+            if payment_status != 'paid':
+                logger.warning(
+                    f"Received checkout.session.completed but payment status is {payment_status} for user {user_id}"
+                )
+                return web.Response(status=200)
+
+            logger.info(f"Payment completed for user {user_id} amount {amount}€")
+            log_user_action(user_id, "payment_completed", f"amount: {amount}€")
+            log_payment(user_id, amount, "paid")
             logger.info(f"Payment completed for user {user_id} amount {amount}€")
             log_user_action(user_id, "payment_completed", f"amount: {amount}€")
             log_payment(user_id, amount, "paid")
             logger.info(f"Payment completed for user {user_id}")
             log_user_action(user_id, "payment_completed", f"amount: {session['amount_total']/100}€")
+
 
 
 
@@ -58,6 +73,7 @@ async def stripe_webhook(request):
             await bot.send_message(user_id, "✅ Оплата підтверджена!")
             start_msg = await bot.send_message(user_id, "🔄 Починаємо переклад файлу...")
             logger.info(f"Starting translation for user {user_id}")
+            asyncio.create_task(start_translation(start_msg, state))
             await start_translation(start_msg, state)
         
         return web.Response(status=200)
