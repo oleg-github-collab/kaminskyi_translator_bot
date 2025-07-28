@@ -41,6 +41,10 @@ def register_all_handlers(dp):
 
     logger.info("=== УСІ HANDLER'И ЗАРЕЄСТРОВАНО ===")
 
+    logger.info("✅ Зареєстровано translate handlers")
+
+    logger.info("=== УСІ HANDLER'И ЗАРЕЄСТРОВАНО ===")
+
 
     logger.info("✅ Зареєстровано translate handlers")
 

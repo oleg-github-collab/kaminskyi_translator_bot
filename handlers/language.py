@@ -28,7 +28,6 @@ FLAG_OVERRIDES = {
     "EL": "GR",
     "NB": "NO",
     "SR": "RS",
-
     "UK": "UA",   # Ukrainian
     "PT": "PT",
     "PT-BR": "BR",
@@ -64,7 +63,6 @@ def get_language_name(code):
 
 def get_flag(code: str) -> str:
     """Return emoji flag for language code"""
-
     code_up = code.upper()
     # Try full code override first, then base ISO code
     flag_code = FLAG_OVERRIDES.get(code_up)
