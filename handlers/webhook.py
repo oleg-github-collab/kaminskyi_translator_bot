@@ -2,7 +2,10 @@ from aiohttp import web
 import stripe
 import config
 import logging
-from utils.logger import log_user_action
+from utils.logger import log_user_action, log_payment, log_error
+from states import TranslationStates
+from handlers.translate import start_translation
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +29,43 @@ async def stripe_webhook(request):
         # Handle the event
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
-            user_id = session['metadata'].get('user_id')
-            logger.info(f"Payment completed for user {user_id}")
-            log_user_action(user_id, "payment_completed", f"amount: {session['amount_total']/100}€")
+            user_id = int(session['metadata'].get('user_id', 0))
+            amount = session['amount_total'] / 100
+            
+            # Ensure payment was actually completed
+            payment_status = session.get('payment_status')
+            if payment_status != 'paid':
+                logger.warning(
+                    f"Received checkout.session.completed but payment status is {payment_status} for user {user_id}"
+                )
+                return web.Response(status=200)
+
+            dp = request.app['dp']
+            state = dp.current_state(chat=user_id, user=user_id)
+            data = await state.get_data()
+            expected_session = data.get("payment_session")
+            if expected_session and expected_session != session.get("id"):
+                logger.warning(
+                    f"Payment session mismatch for user {user_id}: expected {expected_session} got {session.get('id')}"
+                )
+                return web.Response(status=200)
+
+            logger.info(f"Payment completed for user {user_id} amount {amount}€")
+            log_user_action(user_id, "payment_completed", f"amount: {amount}€")
+            log_payment(user_id, amount, "paid")
+
+            bot = dp.bot
+            await state.set_state(TranslationStates.translating.state)
+            await bot.send_message(user_id, "✅ Оплата підтверджена!")
+            start_msg = await bot.send_message(user_id, "🔄 Починаємо переклад файлу...")
+            logger.info(f"Starting translation for user {user_id}")
+            asyncio.create_task(start_translation(start_msg, state))
         
         return web.Response(status=200)
         
     except Exception as e:
         logger.error(f"Error in stripe webhook: {str(e)}")
+        log_error(e, "stripe_webhook")
         return web.Response(status=500)
 
 async def success_page(request):
@@ -50,8 +82,9 @@ async def cancel_page(request):
         log_user_action(user_id, "payment_redirect_cancelled")
     return web.Response(text="Payment cancelled. You can close this window and return to the bot.")
 
-def setup_webhooks(app):
+def setup_webhooks(app, dp):
     """Setup webhook routes"""
+    app['dp'] = dp
     app.router.add_post('/webhook/stripe', stripe_webhook)
     app.router.add_get('/success', success_page)
     app.router.add_get('/cancel', cancel_page)
