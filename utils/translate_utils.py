@@ -107,7 +107,6 @@ def fetch_otranslator_languages() -> Dict[str, str]:
 
     return config.OTRANSLATOR_LANGUAGES
 
-
 async def translate_document_deepl(
     file_path: str,
     target_lang: str,
@@ -189,3 +188,8 @@ async def translate_document_deepl(
     except Exception as e:
         logger.error(f"DeepL document translation error: {str(e)}")
         raise
+    return config.OTRANSLATOR_LANGUAGES
+    return config.OTRANSLATOR_LANGUAGES
+    return config.OTRANSLATOR_LANGUAGES
+    return config.OTRANSLATOR_LANGUAGES
+    return {}

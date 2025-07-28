@@ -6,6 +6,20 @@ from utils.logger import log_user_action, log_payment, log_error
 from states import TranslationStates
 from handlers.translate import start_translation
 import asyncio
+from states import TranslationStates
+from handlers.translate import start_translation
+from states import TranslationStates
+from handlers.translate import start_translation
+from utils.logger import log_user_action
+
+
+
+
+
+
+
+from states import TranslationStates
+from handlers.translate import start_translation
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +57,14 @@ async def stripe_webhook(request):
             logger.info(f"Payment completed for user {user_id} amount {amount}€")
             log_user_action(user_id, "payment_completed", f"amount: {amount}€")
             log_payment(user_id, amount, "paid")
+            logger.info(f"Payment completed for user {user_id} amount {amount}€")
+            log_user_action(user_id, "payment_completed", f"amount: {amount}€")
+            log_payment(user_id, amount, "paid")
+            logger.info(f"Payment completed for user {user_id}")
+            log_user_action(user_id, "payment_completed", f"amount: {session['amount_total']/100}€")
+
+
+
 
             dp = request.app['dp']
             bot = dp.bot
@@ -52,6 +74,7 @@ async def stripe_webhook(request):
             start_msg = await bot.send_message(user_id, "🔄 Починаємо переклад файлу...")
             logger.info(f"Starting translation for user {user_id}")
             asyncio.create_task(start_translation(start_msg, state))
+            await start_translation(start_msg, state)
         
         return web.Response(status=200)
         
