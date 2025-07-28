@@ -21,6 +21,14 @@ LANGUAGES_PER_PAGE = 9
 # Map language codes to appropriate flag codes
 FLAG_OVERRIDES = {
     "EN": "US",  # show US flag for English
+    "UK": "UA",  # Ukrainian
+    "BE": "BY",  # Belarusian
+    "CS": "CZ",
+    "DA": "DK",
+    "EL": "GR",
+    "NB": "NO",
+    "SR": "RS",
+
     "UK": "UA",   # Ukrainian
     "PT": "PT",
     "PT-BR": "BR",
@@ -30,6 +38,9 @@ FLAG_OVERRIDES = {
     "AR": "SA",
     "HE": "IL",
     "HI": "IN",
+    "VI": "VN",
+    "KA": "GE",
+    "KK": "KZ",
 }
 
 # Fallback minimal set if APIs fail
@@ -54,6 +65,15 @@ def get_language_name(code):
 def get_flag(code: str) -> str:
     """Return emoji flag for language code"""
 
+    code_up = code.upper()
+    # Try full code override first, then base ISO code
+    flag_code = FLAG_OVERRIDES.get(code_up)
+    if not flag_code:
+        base_code = code_up.split("-")[0]
+        flag_code = FLAG_OVERRIDES.get(base_code, base_code)
+    if len(flag_code) == 2 and flag_code.isalpha():
+        base = 0x1F1E6
+        return chr(base + ord(flag_code[0]) - 65) + chr(base + ord(flag_code[1]) - 65)
     base_code = code.split("-")[0].upper()
     flag_code = FLAG_OVERRIDES.get(base_code, base_code)
     if len(flag_code) == 2 and flag_code.isalpha():
@@ -68,7 +88,6 @@ def get_flag(code: str) -> str:
     code = code.split("-")[0]
     if len(code) == 2:
         return chr(0x1F1E6 + ord(code[0].upper()) - 65) + chr(0x1F1E6 + ord(code[1].upper()) - 65)
-
 
     return ""
 
@@ -208,4 +227,3 @@ def register_handlers_language(dp):
         lambda c: c.data and c.data.startswith("langpage_"),
         state=TranslationStates.waiting_for_target_language,
     )
-    

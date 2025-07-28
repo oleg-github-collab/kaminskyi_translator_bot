@@ -46,7 +46,6 @@ async def start_translation(message: types.Message, state: FSMContext):
             translated_path = await translate_epic(
                 file_path, source_lang, target_lang, file_extension, progress
             )
-
         # Імітація перекладу
         await message.answer("🔄 Перекладаємо файл...")
         await message.answer("⏳ Це може зайняти кілька секунд...")

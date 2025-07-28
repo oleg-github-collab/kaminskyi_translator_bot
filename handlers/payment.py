@@ -4,15 +4,8 @@ from states import TranslationStates
 import logging
 from utils.payment_utils import create_payment_session
 from utils.logger import log_payment, log_error, log_user_action
-
 from utils.payment_utils import create_payment_session, verify_payment
 from handlers.translate import start_translation
-
-
-
-
-
-
 logger = logging.getLogger(__name__)
 
 async def process_payment(callback: types.CallbackQuery, state: FSMContext):
