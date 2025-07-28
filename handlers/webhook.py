@@ -45,7 +45,6 @@ async def stripe_webhook(request):
             session = event['data']['object']
             user_id = int(session['metadata'].get('user_id', 0))
             amount = session['amount_total'] / 100
-
             # Ensure payment was actually completed
             payment_status = session.get('payment_status')
             if payment_status != 'paid':
@@ -54,6 +53,21 @@ async def stripe_webhook(request):
                 )
                 return web.Response(status=200)
 
+            dp = request.app['dp']
+            state = dp.current_state(chat=user_id, user=user_id)
+            data = await state.get_data()
+            expected_session = data.get("payment_session")
+            if expected_session and expected_session != session.get("id"):
+                logger.warning(
+                    f"Payment session mismatch for user {user_id}: expected {expected_session} got {session.get('id')}"
+                )
+                return web.Response(status=200)
+
+            logger.info(f"Payment completed for user {user_id} amount {amount}€")
+            log_user_action(user_id, "payment_completed", f"amount: {amount}€")
+            log_payment(user_id, amount, "paid")
+
+            bot = dp.bot
             logger.info(f"Payment completed for user {user_id} amount {amount}€")
             log_user_action(user_id, "payment_completed", f"amount: {amount}€")
             log_payment(user_id, amount, "paid")
@@ -75,7 +89,7 @@ async def stripe_webhook(request):
             logger.info(f"Starting translation for user {user_id}")
             asyncio.create_task(start_translation(start_msg, state))
             await start_translation(start_msg, state)
-        
+     
         return web.Response(status=200)
         
     except Exception as e:
