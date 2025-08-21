@@ -260,26 +260,35 @@ def get_current_user_flow_status(user_id: int) -> Dict[str, Any]:
     }
 
 # Middleware для автоматичного логування всіх запитів
-class DebugMiddleware:
-    """Middleware для автоматичного логування"""
+try:
+    from aiogram.dispatcher.middlewares import BaseMiddleware
     
-    def __init__(self):
-        pass
-    
-    async def on_process_message(self, message: types.Message, data: dict):
-        """Обробка вхідних повідомлень"""
-        try:
-            state = data.get('state')
-            if state:
-                await log_message_received(message, state)
-        except Exception as e:
-            print(f"DEBUG: Middleware message error: {e}")
-    
-    async def on_process_callback_query(self, callback: types.CallbackQuery, data: dict):
-        """Обробка callback запитів"""
-        try:
-            state = data.get('state')
-            if state:
-                await log_callback_received(callback, state)
-        except Exception as e:
-            print(f"DEBUG: Middleware callback error: {e}")
+    class DebugMiddleware(BaseMiddleware):
+        """Middleware для автоматичного логування"""
+        
+        def __init__(self):
+            super().__init__()
+        
+        async def on_process_message(self, message: types.Message, data: dict):
+            """Обробка вхідних повідомлень"""
+            try:
+                state = data.get('state')
+                if state:
+                    await log_message_received(message, state)
+            except Exception as e:
+                print(f"DEBUG: Middleware message error: {e}")
+        
+        async def on_process_callback_query(self, callback: types.CallbackQuery, data: dict):
+            """Обробка callback запитів"""
+            try:
+                state = data.get('state')
+                if state:
+                    await log_callback_received(callback, state)
+            except Exception as e:
+                print(f"DEBUG: Middleware callback error: {e}")
+
+except ImportError:
+    # Fallback якщо aiogram не доступний
+    class DebugMiddleware:
+        def __init__(self):
+            pass

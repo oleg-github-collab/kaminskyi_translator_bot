@@ -1,13 +1,13 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
-from utils.debug_logger import debug_handler, log_state_change, debug_logger
+from utils.simple_debug import debug_callback, log_action
 from utils.flow_manager import flow_manager, safe_callback_handler
 import logging
 
 logger = logging.getLogger(__name__)
 
-@debug_handler("universal_callback_handler")
+@debug_callback
 async def universal_callback_handler(callback: types.CallbackQuery, state: FSMContext):
     """УНІВЕРСАЛЬНИЙ ОБРОБНИК ВСІХ CALLBACK'ІВ - FALLBACK СИСТЕМА"""
     user_id = callback.from_user.id
@@ -21,17 +21,7 @@ async def universal_callback_handler(callback: types.CallbackQuery, state: FSMCo
         user_data = await state.get_data()
         
         # Логуємо детальну інформацію
-        await debug_logger.log_user_action(
-            user_id=user_id,
-            action="universal_callback_received",
-            callback_data=callback_data,
-            state=state,
-            callback=callback,
-            additional_info={
-                'current_state': current_state,
-                'user_data_keys': list(user_data.keys()) if user_data else []
-            }
-        )
+        log_action("universal_callback_received", user_id, f"data: {callback_data}, state: {current_state}")
         
         # === ОБРОБКА CALLBACK'ІВ ПО ТИПАХ ===
         

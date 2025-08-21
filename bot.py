@@ -29,15 +29,8 @@ bot = Bot(token=config.BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-# Setup debug middleware (безпечно)
-try:
-    from utils.debug_logger import DebugMiddleware
-    debug_middleware = DebugMiddleware()
-    dp.middleware.setup(debug_middleware)
-    logger.info("✅ Debug middleware активовано")
-except Exception as e:
-    logger.warning(f"⚠️ Debug middleware не вдалося активувати: {e}")
-    logger.info("Продовжуємо без debug middleware")
+# Simple debug logging setup - no complex middleware needed
+logger.info("🔧 Запускаємо бота з простим debug системою")
 
 # Register all handlers
 register_all_handlers(dp)
@@ -46,16 +39,9 @@ register_all_handlers(dp)
 app = web.Application()
 setup_webhooks(app)
 
-# Налагодження callback запитів
-async def debug_callback(callback: types.CallbackQuery):
-    """Налагодження callback запитів"""
-    logger.info(f"Debug callback: {callback.data} from user {callback.from_user.id}")
-    await callback.answer("Debug: отримано " + str(callback.data))
-
 async def on_startup(dp):
     logger.info("Starting Kaminskyi AI Translator Bot...")
-    # Додаємо налагодження
-    # dp.register_callback_query_handler(debug_callback, lambda c: True, state="*")
+    logger.info("🚀 Simple debug system activated")
 
 async def on_shutdown(dp):
     logger.info("Shutting down Kaminskyi AI Translator Bot...")

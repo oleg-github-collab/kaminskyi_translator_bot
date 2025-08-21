@@ -1,12 +1,12 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
-from utils.debug_logger import debug_handler, log_state_change, debug_logger
+from utils.simple_debug import debug_callback, log_state_transition, log_user_flow
 import logging
 
 logger = logging.getLogger(__name__)
 
-@debug_handler("cmd_start")
+@debug_callback
 async def cmd_start(message: types.Message, state: FSMContext):
     """ПОЧАТОК РОБОТИ"""
     try:
@@ -21,13 +21,17 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await TranslationStates.choosing_model.set()
         
         # Логування зміни стану
-        await log_state_change(
+        log_state_transition(
             user_id=message.from_user.id,
-            state=state,
             old_state=old_state or "none",
             new_state="TranslationStates:choosing_model",
             trigger="cmd_start"
         )
+        
+        log_user_flow(message.from_user.id, "start_command", {
+            "old_state": old_state,
+            "new_state": "choosing_model"
+        })
         
         # Відправляємо привітання
         welcome_message = (
@@ -54,7 +58,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         logger.error(f"❌ ПОМИЛКА в cmd_start для користувача {message.from_user.id}: {str(e)}")
         await message.answer("⚠️ Помилка. Спробуйте /start")
 
-@debug_handler("choose_model")
+@debug_callback
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОДЕЛІ - ЦЕ ГОЛОВНИЙ HANDLER"""
     try:
@@ -84,9 +88,8 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
         new_state = await state.get_state()
         
         # Логування зміни стану
-        await log_state_change(
+        log_state_transition(
             user_id=callback.from_user.id,
-            state=state,
             old_state=old_state,
             new_state=new_state,
             trigger=f"choose_model_{model}"
