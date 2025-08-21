@@ -3,7 +3,12 @@ from typing import Optional, Dict, Any
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
-from utils.debug_logger import debug_logger, log_state_change
+try:
+    from utils.debug_logger import debug_logger, log_state_change
+except ImportError:
+    debug_logger = None
+    async def log_state_change(*args, **kwargs):
+        print(f"DEBUG: State change fallback: {args}")
 
 logger = logging.getLogger(__name__)
 
@@ -209,39 +214,51 @@ async def safe_callback_handler(callback: types.CallbackQuery, state: FSMContext
     user_id = callback.from_user.id
     
     try:
-        # Логування початку
-        await debug_logger.log_user_action(
-            user_id=user_id,
-            action=f"handler_start_{handler_name}",
-            callback_data=callback.data,
-            state=state,
-            callback=callback
-        )
+        # Безпечне логування початку
+        try:
+            if debug_logger and hasattr(debug_logger, 'log_user_action'):
+                await debug_logger.log_user_action(
+                    user_id=user_id,
+                    action=f"handler_start_{handler_name}",
+                    callback_data=callback.data,
+                    state=state,
+                    callback=callback
+                )
+        except:
+            print(f"DEBUG: handler_start_{handler_name} for user {user_id}")
         
         # Виконання handler'а
         result = await handler_func(callback, state)
         
-        # Логування успіху
-        await debug_logger.log_user_action(
-            user_id=user_id,
-            action=f"handler_success_{handler_name}",
-            callback_data=callback.data,
-            state=state,
-            additional_info={'result': 'success'}
-        )
+        # Безпечне логування успіху
+        try:
+            if debug_logger and hasattr(debug_logger, 'log_user_action'):
+                await debug_logger.log_user_action(
+                    user_id=user_id,
+                    action=f"handler_success_{handler_name}",
+                    callback_data=callback.data,
+                    state=state,
+                    additional_info={'result': 'success'}
+                )
+        except:
+            print(f"DEBUG: handler_success_{handler_name} for user {user_id}")
         
         return True
         
     except Exception as e:
-        # Логування помилки
+        # Безпечне логування помилки
         error_msg = str(e)
-        await debug_logger.log_user_action(
-            user_id=user_id,
-            action=f"handler_error_{handler_name}",
-            callback_data=callback.data,
-            state=state,
-            additional_info={'error': error_msg}
-        )
+        try:
+            if debug_logger and hasattr(debug_logger, 'log_user_action'):
+                await debug_logger.log_user_action(
+                    user_id=user_id,
+                    action=f"handler_error_{handler_name}",
+                    callback_data=callback.data,
+                    state=state,
+                    additional_info={'error': error_msg}
+                )
+        except:
+            print(f"DEBUG: handler_error_{handler_name} for user {user_id}: {error_msg}")
         
         # Спроба відновлення
         recovery_result = await flow_manager.handle_error_recovery(user_id, state, error_msg)
