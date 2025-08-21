@@ -1,21 +1,33 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
+from utils.debug_logger import debug_handler, log_state_change, debug_logger
 import logging
 
 logger = logging.getLogger(__name__)
 
+@debug_handler("cmd_start")
 async def cmd_start(message: types.Message, state: FSMContext):
     """ПОЧАТОК РОБОТИ"""
     try:
         logger.info(f"🟢 START від користувача {message.from_user.id}")
         
         # ПОВНЕ СКИДАННЯ
+        old_state = await state.get_state()
         await state.finish()
         await state.reset_data()
         
         # Встановлюємо початковий стан
         await TranslationStates.choosing_model.set()
+        
+        # Логування зміни стану
+        await log_state_change(
+            user_id=message.from_user.id,
+            state=state,
+            old_state=old_state or "none",
+            new_state="TranslationStates:choosing_model",
+            trigger="cmd_start"
+        )
         
         # Відправляємо привітання
         welcome_message = (
@@ -42,6 +54,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         logger.error(f"❌ ПОМИЛКА в cmd_start для користувача {message.from_user.id}: {str(e)}")
         await message.answer("⚠️ Помилка. Спробуйте /start")
 
+@debug_handler("choose_model")
 async def choose_model(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОДЕЛІ - ЦЕ ГОЛОВНИЙ HANDLER"""
     try:
@@ -66,7 +79,18 @@ async def choose_model(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(model=model)
         
         # Переходимо до наступного стану
+        old_state = await state.get_state()
         await TranslationStates.next()  # waiting_for_source_language
+        new_state = await state.get_state()
+        
+        # Логування зміни стану
+        await log_state_change(
+            user_id=callback.from_user.id,
+            state=state,
+            old_state=old_state,
+            new_state=new_state,
+            trigger=f"choose_model_{model}"
+        )
         
         # Відправляємо вибір мови оригіналу
         await callback.message.answer("<b>Крок 2/5:</b> Оберіть мову оригіналу:", parse_mode="HTML")
@@ -153,8 +177,12 @@ def register_handlers_start(dp):
     dp.register_message_handler(cmd_start, commands=["start"], state="*")
     logger.info("✅ Зареєстровано cmd_start")
     
-    # Вибір моделі - БЕЗ ФІЛЬТРІВ (КЛЮЧОВЕ ВИПРАВЛЕННЯ)
-    dp.register_callback_query_handler(choose_model)
+    # Вибір моделі - З ПРАВИЛЬНИМ ФІЛЬТРОМ ТА СТАНОМ
+    dp.register_callback_query_handler(
+        choose_model, 
+        lambda c: c.data and c.data.startswith("model_"),
+        state=TranslationStates.choosing_model
+    )
     logger.info("✅ Зареєстровано choose_model")
     
     # Продовження

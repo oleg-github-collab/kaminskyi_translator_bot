@@ -117,6 +117,23 @@ async def choose_target_language(callback: types.CallbackQuery, state: FSMContex
         await callback.answer("⚠️ Помилка")
 
 def register_handlers_language(dp):
-    """РЕЄСТРАЦІЯ HANDLER'ІВ МОВ"""
-    dp.register_callback_query_handler(choose_source_language)  # БЕЗ ОБМЕЖЕНЬ
-    dp.register_callback_query_handler(choose_target_language)  # БЕЗ ОБМЕЖЕНЬ
+    """РЕЄСТРАЦІЯ HANDLER'ІВ МОВ З ПРАВИЛЬНИМИ ФІЛЬТРАМИ"""
+    logger.info("=== РЕЄСТРАЦІЯ HANDLER'ІВ LANGUAGE ===")
+    
+    # Handler для вибору мови оригіналу (стан waiting_for_source_language)
+    dp.register_callback_query_handler(
+        choose_source_language,
+        lambda c: c.data and c.data.startswith("lang_"),
+        state=TranslationStates.waiting_for_source_language
+    )
+    logger.info("✅ Зареєстровано choose_source_language")
+    
+    # Handler для вибору мови перекладу (стан waiting_for_target_language)
+    dp.register_callback_query_handler(
+        choose_target_language,
+        lambda c: c.data and c.data.startswith("lang_"),
+        state=TranslationStates.waiting_for_target_language
+    )
+    logger.info("✅ Зареєстровано choose_target_language")
+    
+    logger.info("=== УСІ HANDLER'И LANGUAGE ЗАРЕЄСТРОВАНО ===")

@@ -29,6 +29,11 @@ bot = Bot(token=config.BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+# Setup debug middleware
+from utils.debug_logger import DebugMiddleware
+debug_middleware = DebugMiddleware()
+dp.middleware.setup(debug_middleware)
+
 # Register all handlers
 register_all_handlers(dp)
 
