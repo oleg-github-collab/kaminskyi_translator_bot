@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оплата успішна - Kaminskyi AI</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🤖%3C/text%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00d4aa, #00d4aa);
+        }
+        
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+            animation: bounce 1s ease-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .detail-value {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .bot-link {
+            display: inline-block;
+            background: linear-gradient(45deg, #0088cc, #0099dd);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+        }
+        
+        .bot-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 136, 204, 0.4);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            animation: progress 3s ease-out forwards;
+        }
+        
+        @keyframes progress {
+            to {
+                width: 100%;
+            }
+        }
+        
+        .timer {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        .feature-list {
+            text-align: left;
+            margin: 20px 0;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            color: #495057;
+        }
+        
+        .feature-icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+            
+            .success-icon {
+                font-size: 60px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">✅</div>
+        <h1>Оплата успішна!</h1>
+        <p class="message">
+            Дякуємо за оплату! Ваш переклад буде готовий найближчим часом.
+            Повертайтеся до бота для продовження роботи.
+        </p>
+        
+        <div class="details">
+            <div class="detail-item">
+                <span class="detail-label">📊 Статус:</span>
+                <span class="detail-value">Оплачено</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">⚡ Обробка:</span>
+                <span class="detail-value">Миттєво</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">🔒 Безпека:</span>
+                <span class="detail-value">Stripe SSL</span>
+            </div>
+        </div>
+        
+        <div class="feature-list">
+            <div class="feature-item">
+                <span class="feature-icon">🚀</span>
+                <span>Ваш переклад розпочався автоматично</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">📱</span>
+                <span>Отримаєте повідомлення в боті</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">💌</span>
+                <span>Чек надіслано на вашу пошту</span>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        
+        <a href="https://t.me/KaminskyiAIBot" class="bot-link">
+            🤖 Повернутися до бота
+        </a>
+        
+        <p class="timer">
+            Це вікно автоматично закриється через <span id="countdown">5</span> секунд
+        </p>
+    </div>
+
+    <script>
+        // Countdown timer
+        let seconds = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            seconds--;
+            countdownElement.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(timer);
+                window.close();
+            }
+        }, 1000);
+
+        // Try to close automatically after 5 seconds
+        setTimeout(() => {
+            try {
+                window.close();
+            } catch (e) {
+                // If can't close automatically, show message
+                document.querySelector('.timer').innerHTML = 
+                    '💡 Ви можете закрити це вікно вручну';
+            }
+        }, 5000);
+
+        // Add some interactive effects
+        document.querySelector('.bot-link').addEventListener('click', () => {
+            document.querySelector('.success-icon').style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                document.querySelector('.success-icon').style.transform = 'scale(1)';
+            }, 200);
+        });
+
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', (e) => {
+            // Only show warning if user tries to leave within first 3 seconds
+            if (seconds > 2) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>
