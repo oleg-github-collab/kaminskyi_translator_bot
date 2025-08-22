@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import DEEPL_LANGUAGES, OTRANSLATOR_LANGUAGES, COMMON_LANGUAGES, MODELS
+from config import DEEPL_LANGUAGES, OTRANSLATOR_LANGUAGES, ALL_LANGUAGES_WITH_FLAGS, MODELS
 
 def get_model_keyboard(user_lang: str = "en"):
     """Клавіатура вибору моделі перекладу"""
@@ -19,13 +19,13 @@ def get_language_keyboard(model="basic", page=0):
     elif model == "epic":
         available_languages = OTRANSLATOR_LANGUAGES
     else:
-        available_languages = COMMON_LANGUAGES
+        available_languages = ALL_LANGUAGES_WITH_FLAGS
     
     # 2. СТВОРЕННЯ СПИСКУ З ПРАПОРАМИ
     language_list = []
     for lang_code, lang_name in available_languages.items():
-        # Використовуємо красиву назву з прапором якщо є
-        display_name = COMMON_LANGUAGES.get(lang_code, lang_name)
+        # Використовуємо красиву назву з прапором для ВСІ мов
+        display_name = ALL_LANGUAGES_WITH_FLAGS.get(lang_code, lang_name)
         language_list.append((lang_code, display_name))
     
     # 3. СОРТУВАННЯ ЗА АЛФАВІТОМ

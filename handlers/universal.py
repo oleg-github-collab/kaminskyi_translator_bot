@@ -6,7 +6,7 @@ from utils.flow_manager import flow_manager, safe_callback_handler
 from utils.language_system import (
     create_language_menu_keyboard, create_popular_languages_keyboard,
     create_all_languages_keyboard, create_regional_keyboard,
-    get_language_name, validate_language, LANGUAGE_REGIONS
+    LANGUAGE_REGIONS
 )
 import logging
 
@@ -178,9 +178,16 @@ async def handle_language_selection(callback: types.CallbackQuery, state: FSMCon
         language_code = callback.data.split("_")[1]
         await callback.answer()
         
-        # Валідація мови
-        if not validate_language(language_code):
-            await callback.answer("⚠️ Невідома мова")
+        # Валідація мови - використовуємо правильні функції
+        from handlers.language import get_language_name, get_supported_languages
+        
+        # Отримуємо дані користувача для валідації
+        user_data = await state.get_data()
+        model = user_data.get('model', 'basic')
+        supported_languages = get_supported_languages(model)
+        
+        if language_code not in supported_languages:
+            await callback.answer("⚠️ Мова не підтримується цією моделлю")
             return False
         
         lang_name = get_language_name(language_code)
@@ -198,15 +205,19 @@ async def handle_language_selection(callback: types.CallbackQuery, state: FSMCon
             )
             
             await callback.message.answer(f"✅ Мова оригіналу: {lang_name}")
+            
+            # Показуємо кількість доступних мов залежно від моделі
+            lang_count = len(supported_languages)
             await callback.message.answer(
-                "<b>Крок 3/5:</b> Оберіть мову перекладу:\n"
-                "🌍 Доступно 130+ мов",
+                f"<b>Крок 3/5:</b> Оберіть мову перекладу:\n"
+                f"🌍 Доступно {lang_count} мов",
                 parse_mode="HTML"
             )
             
-            # Меню вибору мов для перекладу
-            keyboard = create_language_menu_keyboard()
-            await callback.message.answer("Оберіть категорію мов:", reply_markup=keyboard)
+            # Показуємо клавіатуру мов для вибраної моделі
+            from keyboards.inline import get_language_keyboard
+            keyboard = get_language_keyboard(model, page=0)
+            await callback.message.answer("Оберіть мову перекладу:", reply_markup=keyboard)
             
         elif current_state == "TranslationStates:waiting_for_target_language":
             # Вибір мови перекладу

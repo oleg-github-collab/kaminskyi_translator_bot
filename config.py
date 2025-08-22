@@ -60,20 +60,51 @@ OTRANSLATOR_LANGUAGES = {
     "YI": "Yiddish", "YO": "Yoruba", "ZU": "Zulu"
 }
 
-# Combined languages for interface (most commonly used)
-COMMON_LANGUAGES = {
-    "UK": "🇺🇦 Українська", "EN": "🇬🇧 English", "DE": "🇩🇪 Deutsch", 
-    "FR": "🇫🇷 Français", "ES": "🇪🇸 Español", "PL": "🇵🇱 Polski",
-    "RU": "🇷🇺 Русский", "ZH": "🇨🇳 中文", "JA": "🇯🇵 日本語",
-    "AR": "🇸🇦 العربية", "IT": "🇮🇹 Italiano", "PT": "🇵🇹 Português",
-    "NL": "🇳🇱 Nederlands", "SV": "🇸🇪 Svenska", "DA": "🇩🇰 Dansk",
-    "NB": "🇳🇴 Norsk", "FI": "🇫🇮 Suomi", "HU": "🇭🇺 Magyar",
-    "CS": "🇨🇿 Čeština", "SK": "🇸🇰 Slovenčina", "BG": "🇧🇬 Български",
-    "RO": "🇷🇴 Română", "EL": "🇬🇷 Ελληνικά", "TR": "🇹🇷 Türkçe",
-    "HI": "🇮🇳 हिन्दी", "KO": "🇰🇷 한국어", "TH": "🇹🇭 ไทย",
-    "VI": "🇻🇳 Tiếng Việt", "ID": "🇮🇩 Bahasa Indonesia", "MS": "🇲🇾 Bahasa Melayu",
-    "HE": "🇮🇱 עברית", "FA": "🇮🇷 فارسی"
+# Повний список мов з прапорами для ВСІ підтримуваних мов
+ALL_LANGUAGES_WITH_FLAGS = {
+    # DeepL мови з прапорами
+    "AR": "🇸🇦 العربية", "BG": "🇧🇬 Български", "CS": "🇨🇿 Čeština", 
+    "DA": "🇩🇰 Dansk", "DE": "🇩🇪 Deutsch", "EL": "🇬🇷 Ελληνικά",
+    "EN": "🇬🇧 English", "ES": "🇪🇸 Español", "ET": "🇪🇪 Eesti",
+    "FI": "🇫🇮 Suomi", "FR": "🇫🇷 Français", "HE": "🇮🇱 עברית",
+    "HU": "🇭🇺 Magyar", "ID": "🇮🇩 Bahasa Indonesia", "IT": "🇮🇹 Italiano",
+    "JA": "🇯🇵 日本語", "KO": "🇰🇷 한국어", "LT": "🇱🇹 Lietuvių",
+    "LV": "🇱🇻 Latviešu", "NB": "🇳🇴 Norsk", "NL": "🇳🇱 Nederlands",
+    "PL": "🇵🇱 Polski", "PT": "🇵🇹 Português", "RO": "🇷🇴 Română",
+    "RU": "🇷🇺 Русский", "SK": "🇸🇰 Slovenčina", "SL": "🇸🇮 Slovenščina",
+    "SV": "🇸🇪 Svenska", "TH": "🇹🇭 ไทย", "TR": "🇹🇷 Türkçe",
+    "UK": "🇺🇦 Українська", "VI": "🇻🇳 Tiếng Việt", "ZH": "🇨🇳 中文",
+    
+    # Додаткові O*Translator мови з прапорами
+    "AF": "🇿🇦 Afrikaans", "SQ": "🇦🇱 Shqip", "AM": "🇪🇹 አማርኛ",
+    "HY": "🇦🇲 Հայերեն", "AZ": "🇦🇿 Azərbaycan", "EU": "🏴󠁥󠁳󠁰󠁶󠁿 Euskera",
+    "BE": "🇧🇾 Беларуская", "BN": "🇧🇩 বাংলা", "BS": "🇧🇦 Bosanski",
+    "CA": "🏴󠁥󠁳󠁣󠁴󠁿 Català", "CO": "🇫🇷 Corsu", "HR": "🇭🇷 Hrvatski",
+    "EO": "🌍 Esperanto", "TL": "🇵🇭 Filipino", "FY": "🇳🇱 Frysk",
+    "GL": "🏴󠁥󠁳󠁧󠁡󠁿 Galego", "KA": "🇬🇪 ქართული", "GU": "🇮🇳 ગુજરાતી",
+    "HT": "🇭🇹 Kreyòl", "HA": "🇳🇬 Hausa", "HAW": "🇺🇸 ʻŌlelo Hawaiʻi", "HI": "🇮🇳 हिन्दी",
+    "HMN": "🇨🇳 Hmoob", "IS": "🇮🇸 Íslenska", "IG": "🇳🇬 Igbo",
+    "GA": "🇮🇪 Gaeilge", "JW": "🇮🇩 Basa Jawa", "KN": "🇮🇳 ಕನ್ನಡ",
+    "KK": "🇰🇿 Қазақ", "KM": "🇰🇭 ខ្មែរ", "RW": "🇷🇼 Kinyarwanda",
+    "KU": "🇹🇷 Kurdî", "KY": "🇰🇬 Кыргызча", "LO": "🇱🇦 ລາວ",
+    "LA": "🏛️ Latina", "LB": "🇱🇺 Lëtzebuergesch", "MK": "🇲🇰 Македонски",
+    "MG": "🇲🇬 Malagasy", "MS": "🇲🇾 Bahasa Melayu", "ML": "🇮🇳 മലയാളം",
+    "MT": "🇲🇹 Malti", "MI": "🇳🇿 Te Reo Māori", "MR": "🇮🇳 मराठी",
+    "MN": "🇲🇳 Монгол", "MY": "🇲🇲 မြန်မာ", "NE": "🇳🇵 नेपाली",
+    "NY": "🇲🇼 Chichewa", "OR": "🇮🇳 ଓଡ଼ିଆ", "PS": "🇦🇫 پښتو",
+    "FA": "🇮🇷 فارسی", "PA": "🇮🇳 ਪੰਜਾਬੀ", "SM": "🇼🇸 Gagana Samoa",
+    "GD": "🏴󠁧󠁢󠁳󠁣󠁴󠁿 Gàidhlig", "SR": "🇷🇸 Српски", "ST": "🇱🇸 Sesotho",
+    "SN": "🇿🇼 Shona", "SD": "🇵🇰 سنڌي", "SI": "🇱🇰 සිංහල",
+    "SO": "🇸🇴 Soomaali", "SU": "🇮🇩 Basa Sunda", "SW": "🇰🇪 Kiswahili",
+    "TG": "🇹🇯 Тоҷикӣ", "TA": "🇱🇰 தமிழ்", "TT": "🇷🇺 Татар",
+    "TE": "🇮🇳 తెలుగు", "TK": "🇹🇲 Türkmen", "UR": "🇵🇰 اردو",
+    "UG": "🇨🇳 ئۇيغۇر", "UZ": "🇺🇿 O'zbek", "CY": "🏴󠁧󠁢󠁷󠁬󠁳󠁿 Cymraeg",
+    "XH": "🇿🇦 isiXhosa", "YI": "🇮🇱 ייִדיש", "YO": "🇳🇬 Yorùbá",
+    "ZU": "🇿🇦 isiZulu"
 }
+
+# Для зворотної сумісності
+COMMON_LANGUAGES = ALL_LANGUAGES_WITH_FLAGS
 
 INTERFACE_LANGUAGES = {
     "uk": "Українська",

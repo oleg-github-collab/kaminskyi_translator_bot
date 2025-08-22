@@ -6,11 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Імпорт мов з конфігурації
-from config import COMMON_LANGUAGES, DEEPL_LANGUAGES, OTRANSLATOR_LANGUAGES
+from config import ALL_LANGUAGES_WITH_FLAGS, DEEPL_LANGUAGES, OTRANSLATOR_LANGUAGES
 
 def get_language_name(code):
     """Отримати назву мови за кодом"""
-    return COMMON_LANGUAGES.get(code, DEEPL_LANGUAGES.get(code, OTRANSLATOR_LANGUAGES.get(code, code)))
+    return ALL_LANGUAGES_WITH_FLAGS.get(code, DEEPL_LANGUAGES.get(code, OTRANSLATOR_LANGUAGES.get(code, code)))
 
 def get_supported_languages(model="basic"):
     """Отримати підтримувані мови для конкретної моделі"""
@@ -19,7 +19,7 @@ def get_supported_languages(model="basic"):
     elif model == "epic":
         return OTRANSLATOR_LANGUAGES
     else:
-        return COMMON_LANGUAGES
+        return ALL_LANGUAGES_WITH_FLAGS
 
 
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
