@@ -1,3 +1,6 @@
 2025-08-22 01:07:16,313 - BOT_DEBUG - INFO - [test_action] User: 12345 | testing basic logging
 2025-08-22 01:07:16,313 - BOT_DEBUG - INFO - [STATE_CHANGE] User: 12345 | state_old → state_new (test_trigger)
 2025-08-22 01:07:16,313 - BOT_DEBUG - INFO - [USER_FLOW] User: 12345 | step: test_step, data: {'data': 'test'}
+2025-08-22 09:35:26,232 - BOT_DEBUG - INFO - [test_action] User: 12345 | testing new systems
+2025-08-22 09:35:26,233 - BOT_DEBUG - INFO - [STATE_CHANGE] User: 12345 | old_state → new_state (test)
+2025-08-22 09:35:26,233 - BOT_DEBUG - INFO - [USER_FLOW] User: 12345 | step: testing_step, data: {'system': 'new'}

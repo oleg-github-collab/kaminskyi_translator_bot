@@ -3,6 +3,11 @@ from aiogram.dispatcher import FSMContext
 from states import TranslationStates
 from utils.simple_debug import debug_callback, log_action
 from utils.flow_manager import flow_manager, safe_callback_handler
+from utils.language_system import (
+    create_language_menu_keyboard, create_popular_languages_keyboard,
+    create_all_languages_keyboard, create_regional_keyboard,
+    get_language_name, validate_language, LANGUAGE_REGIONS
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,11 +42,15 @@ async def universal_callback_handler(callback: types.CallbackQuery, state: FSMCo
         elif callback_data in ["process_payment", "payment_done", "upload_another", "payment_help"]:
             return await handle_payment_callbacks(callback, state)
         
-        # 4. НАВІГАЦІЙНІ CALLBACK'И
-        elif callback_data in ["continue_translate", "exit"]:
+        # 4. МЕНЮ МОВ
+        elif callback_data and callback_data.startswith("lang_menu_"):
+            return await handle_language_menu(callback, state)
+        
+        # 5. НАВІГАЦІЙНІ CALLBACK'И
+        elif callback_data in ["continue_translate", "exit", "lang_menu_back"]:
             return await handle_navigation_callbacks(callback, state)
         
-        # 5. НЕВІДОМІ CALLBACK'И
+        # 6. НЕВІДОМІ CALLBACK'И
         else:
             return await handle_unknown_callback(callback, state)
             
@@ -109,27 +118,15 @@ async def handle_model_selection(callback: types.CallbackQuery, state: FSMContex
         # Відправляємо повідомлення про вибір мови
         model_name = "Kaminskyi Basic" if model == "basic" else "Kaminskyi Epic"
         await callback.message.answer(f"✅ Обрано модель: {model_name}")
-        await callback.message.answer("<b>Крок 2/5:</b> Оберіть мову оригіналу:", parse_mode="HTML")
-        
-        # Кнопки мов
-        keyboard = types.InlineKeyboardMarkup(row_width=3)
-        keyboard.add(
-            types.InlineKeyboardButton("🇺🇦 UKR", callback_data="lang_UK"),
-            types.InlineKeyboardButton("🇬🇧 ENG", callback_data="lang_EN"),
-            types.InlineKeyboardButton("🇩🇪 GER", callback_data="lang_DE")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇫🇷 FRA", callback_data="lang_FR"),
-            types.InlineKeyboardButton("🇪🇸 SPA", callback_data="lang_ES"),
-            types.InlineKeyboardButton("🇵🇱 POL", callback_data="lang_PL")
-        )
-        keyboard.add(
-            types.InlineKeyboardButton("🇷🇺 RUS", callback_data="lang_RU"),
-            types.InlineKeyboardButton("🇨🇳 CHN", callback_data="lang_ZH"),
-            types.InlineKeyboardButton("🇯🇵 JPN", callback_data="lang_JA")
+        await callback.message.answer(
+            "<b>Крок 2/5:</b> Оберіть мову оригіналу:\n"
+            "🌍 Доступно 130+ мов",
+            parse_mode="HTML"
         )
         
-        await callback.message.answer("Виберіть мову оригіналу:", reply_markup=keyboard)
+        # Меню вибору мов
+        keyboard = create_language_menu_keyboard()
+        await callback.message.answer("Оберіть категорію мов:", reply_markup=keyboard)
         
         logger.info(f"✅ МОДЕЛЬ {model} успішно обрана для користувача {user_id}")
         return True
@@ -154,14 +151,12 @@ async def handle_language_selection(callback: types.CallbackQuery, state: FSMCon
         language_code = callback.data.split("_")[1]
         await callback.answer()
         
-        # Назви мов
-        language_names = {
-            "UK": "Українська", "EN": "English", "DE": "Deutsch",
-            "FR": "Français", "ES": "Español", "PL": "Polski",
-            "RU": "Русский", "ZH": "中文", "JA": "日本語"
-        }
+        # Валідація мови
+        if not validate_language(language_code):
+            await callback.answer("⚠️ Невідома мова")
+            return False
         
-        lang_name = language_names.get(language_code, language_code)
+        lang_name = get_language_name(language_code)
         
         # ЛОГІКА ЗАЛЕЖНО ВІД ПОТОЧНОГО СТАНУ
         if current_state == "TranslationStates:waiting_for_source_language":
@@ -176,27 +171,15 @@ async def handle_language_selection(callback: types.CallbackQuery, state: FSMCon
             )
             
             await callback.message.answer(f"✅ Мова оригіналу: {lang_name}")
-            await callback.message.answer("<b>Крок 3/5:</b> Оберіть мову перекладу:", parse_mode="HTML")
-            
-            # Кнопки для вибору мови перекладу
-            keyboard = types.InlineKeyboardMarkup(row_width=3)
-            keyboard.add(
-                types.InlineKeyboardButton("🇺🇦 UKR", callback_data="lang_UK"),
-                types.InlineKeyboardButton("🇬🇧 ENG", callback_data="lang_EN"),
-                types.InlineKeyboardButton("🇩🇪 GER", callback_data="lang_DE")
-            )
-            keyboard.add(
-                types.InlineKeyboardButton("🇫🇷 FRA", callback_data="lang_FR"),
-                types.InlineKeyboardButton("🇪🇸 SPA", callback_data="lang_ES"),
-                types.InlineKeyboardButton("🇵🇱 POL", callback_data="lang_PL")
-            )
-            keyboard.add(
-                types.InlineKeyboardButton("🇷🇺 RUS", callback_data="lang_RU"),
-                types.InlineKeyboardButton("🇨🇳 CHN", callback_data="lang_ZH"),
-                types.InlineKeyboardButton("🇯🇵 JPN", callback_data="lang_JA")
+            await callback.message.answer(
+                "<b>Крок 3/5:</b> Оберіть мову перекладу:\n"
+                "🌍 Доступно 130+ мов",
+                parse_mode="HTML"
             )
             
-            await callback.message.answer("Виберіть мову перекладу:", reply_markup=keyboard)
+            # Меню вибору мов для перекладу
+            keyboard = create_language_menu_keyboard()
+            await callback.message.answer("Оберіть категорію мов:", reply_markup=keyboard)
             
         elif current_state == "TranslationStates:waiting_for_target_language":
             # Вибір мови перекладу
@@ -259,6 +242,77 @@ async def handle_payment_callbacks(callback: types.CallbackQuery, state: FSMCont
         logger.error(f"❌ ПОМИЛКА в handle_payment_callbacks: {str(e)}")
         return False
 
+async def handle_language_menu(callback: types.CallbackQuery, state: FSMContext):
+    """ОБРОБКА МЕНЮ МОВ"""
+    user_id = callback.from_user.id
+    
+    try:
+        logger.info(f"🌍 МЕНЮ МОВ: {callback.data} для користувача {user_id}")
+        
+        menu_type = callback.data.replace("lang_menu_", "")
+        await callback.answer()
+        
+        if menu_type == "popular":
+            keyboard = create_popular_languages_keyboard()
+            await callback.message.edit_text(
+                "🔥 **Популярні мови:**\nОберіть мову:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+            
+        elif menu_type == "all":
+            keyboard = create_all_languages_keyboard()
+            await callback.message.edit_text(
+                "🌍 **Всі доступні мови:**\nОберіть мову:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+            
+        elif menu_type == "european":
+            keyboard = create_regional_keyboard("European")
+            await callback.message.edit_text(
+                "🇪🇺 **Європейські мови:**\nОберіть мову:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+            
+        elif menu_type == "asian":
+            keyboard = create_regional_keyboard("Asian")
+            await callback.message.edit_text(
+                "🌏 **Азійські мови:**\nОберіть мову:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+            
+        elif menu_type == "african":
+            keyboard = create_regional_keyboard("African")
+            await callback.message.edit_text(
+                "🌍 **Африканські мови:**\nОберіть мову:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+            
+        elif menu_type == "americas":
+            keyboard = create_regional_keyboard("Americas")
+            await callback.message.edit_text(
+                "🌎 **Мови Америки:**\nОберіть мову:",
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+        else:
+            await callback.message.answer("⚠️ Невідомий тип меню")
+            return False
+        
+        # Додаємо кнопку "Назад" до всіх меню
+        back_button = types.InlineKeyboardButton("🔙 Назад до категорій", callback_data="lang_menu_back")
+        keyboard.add(back_button)
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ ПОМИЛКА в handle_language_menu: {str(e)}")
+        return False
+
 async def handle_navigation_callbacks(callback: types.CallbackQuery, state: FSMContext):
     """ОБРОБКА НАВІГАЦІЙНИХ CALLBACK'ІВ"""
     user_id = callback.from_user.id
@@ -290,6 +344,19 @@ async def handle_navigation_callbacks(callback: types.CallbackQuery, state: FSMC
             await callback.answer()
             await flow_manager.reset_user_completely(user_id, state)
             await callback.message.answer("👋 Дякуємо за використання! Для нового перекладу натисніть /start")
+            
+        elif callback.data == "lang_menu_back":
+            # Повернення до головного меню мов
+            await callback.answer()
+            keyboard = create_language_menu_keyboard()
+            current_state = await state.get_state()
+            
+            if "waiting_for_source_language" in str(current_state):
+                text = "🌍 **Оберіть мову оригіналу:**\nВиберіть категорію:"
+            else:
+                text = "🌍 **Оберіть мову перекладу:**\nВиберіть категорію:"
+            
+            await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
         
         return True
         

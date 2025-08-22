@@ -1,7 +1,8 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from states import TranslationStates
-from utils.logger import log_user_action
+from utils.simple_debug import debug_callback, log_action
+from utils.file_validation import get_supported_formats_text
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer("🔄 Переходимо до оплати...")
         await callback.message.answer("⚠️ Увага: Система оплати тимчасово в розробці. Натисніть /translate для тестового перекладу")
         
-        log_user_action(callback.from_user.id, "clicked_payment_button")
+        log_action("clicked_payment_button", callback.from_user.id, "user clicked payment")
         
     except Exception as e:
         logger.error(f"Error in process_payment for user {callback.from_user.id}: {str(e)}")
@@ -42,9 +43,12 @@ async def upload_another(callback: types.CallbackQuery, state: FSMContext):
             except:
                 pass
         
-        await callback.message.answer("📥 Надішліть інший файл для перекладу (txt, docx, pdf):")
+        await callback.message.answer(
+            "📥 **Надішліть інший файл для перекладу:**\n\n" + get_supported_formats_text(),
+            parse_mode="Markdown"
+        )
         
-        log_user_action(callback.from_user.id, "clicked_upload_another")
+        log_action("clicked_upload_another", callback.from_user.id, "user wants to upload another file")
         
     except Exception as e:
         logger.error(f"Error in upload_another for user {callback.from_user.id}: {str(e)}")
