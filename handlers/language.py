@@ -21,48 +21,6 @@ def get_supported_languages(model="basic"):
     else:
         return COMMON_LANGUAGES
 
-def create_language_keyboard(model="basic", max_per_page=20, page=0):
-    """Створити клавіатуру з мовами з підтримкою пагінації"""
-    languages = get_supported_languages(model)
-    
-    # Використовуємо COMMON_LANGUAGES для відображення з прапорами
-    display_languages = []
-    for code in languages.keys():
-        display_name = COMMON_LANGUAGES.get(code, languages[code])
-        display_languages.append((code, display_name))
-    
-    # Сортування за назвою
-    display_languages.sort(key=lambda x: x[1])
-    
-    # Пагінація
-    start_idx = page * max_per_page
-    end_idx = start_idx + max_per_page
-    page_languages = display_languages[start_idx:end_idx]
-    
-    keyboard = types.InlineKeyboardMarkup(row_width=2)
-    
-    # Додаємо кнопки мов
-    for i in range(0, len(page_languages), 2):
-        row_buttons = []
-        for j in range(2):
-            if i + j < len(page_languages):
-                code, name = page_languages[i + j]
-                # Обрізаємо довгі назви для кнопок
-                button_text = name if len(name) <= 20 else name[:17] + "..."
-                row_buttons.append(types.InlineKeyboardButton(button_text, callback_data=f"lang_{code}"))
-        keyboard.row(*row_buttons)
-    
-    # Кнопки навігації
-    if len(display_languages) > max_per_page:
-        nav_buttons = []
-        if page > 0:
-            nav_buttons.append(types.InlineKeyboardButton("⬅️ Назад", callback_data=f"lang_page_{page-1}"))
-        if end_idx < len(display_languages):
-            nav_buttons.append(types.InlineKeyboardButton("Далі ➡️", callback_data=f"lang_page_{page+1}"))
-        if nav_buttons:
-            keyboard.row(*nav_buttons)
-    
-    return keyboard
 
 async def choose_source_language(callback: types.CallbackQuery, state: FSMContext):
     """ВИБІР МОВИ ОРИГІНАЛУ"""
@@ -105,7 +63,8 @@ async def choose_source_language(callback: types.CallbackQuery, state: FSMContex
         # Отримуємо модель та створюємо відповідну клавіатуру
         user_data = await state.get_data()
         model = user_data.get('model', 'basic')
-        keyboard = create_language_keyboard(model)
+        from keyboards.inline import get_language_keyboard
+        keyboard = get_language_keyboard(model)
         
         await callback.message.answer("Виберіть мову:", reply_markup=keyboard)
         
@@ -179,10 +138,13 @@ async def handle_language_pagination(callback: types.CallbackQuery, state: FSMCo
         model = user_data.get('model', 'basic')
         
         # Створюємо нову клавіатуру
-        keyboard = create_language_keyboard(model, page=page)
+        from keyboards.inline import get_language_keyboard
+        keyboard = get_language_keyboard(model, page=page)
         
         # Оновлюємо повідомлення
         await callback.message.edit_reply_markup(reply_markup=keyboard)
+        
+        logger.info(f"✅ Пагінація мов: сторінка {page}, модель {model}")
         
     except Exception as e:
         logger.error(f"❌ ПОМИЛКА в handle_language_pagination: {str(e)}")

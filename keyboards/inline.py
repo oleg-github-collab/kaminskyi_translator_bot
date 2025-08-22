@@ -10,8 +10,8 @@ def get_model_keyboard(user_lang: str = "en"):
     )
     return keyboard
 
-def get_language_keyboard(model="basic", max_per_page=16, page=0):
-    """Клавіатура вибору мови з пагінацією"""
+def get_language_keyboard(model="basic", page=0):
+    """Клавіатура вибору мови з повним списком та пагінацією"""
     # Вибираємо мови залежно від моделі
     if model == "basic":
         languages = DEEPL_LANGUAGES
@@ -20,45 +20,56 @@ def get_language_keyboard(model="basic", max_per_page=16, page=0):
     else:
         languages = COMMON_LANGUAGES
     
-    # Створюємо список з прапорами
-    display_languages = []
-    for code in languages.keys():
-        display_name = COMMON_LANGUAGES.get(code, languages[code])
-        display_languages.append((code, display_name))
+    # Конвертуємо в список для сортування
+    lang_list = []
+    for code, name in languages.items():
+        # Використовуємо назву з прапором якщо є в COMMON_LANGUAGES
+        display_name = COMMON_LANGUAGES.get(code, name)
+        lang_list.append((code, display_name))
     
-    # Сортування
-    display_languages.sort(key=lambda x: x[1])
+    # Сортуємо за назвою
+    lang_list.sort(key=lambda x: x[1])
     
-    # Пагінація
-    start_idx = page * max_per_page
-    end_idx = start_idx + max_per_page
-    page_languages = display_languages[start_idx:end_idx]
+    # Пагінація - 14 мов на сторінку (7 рядків по 2)
+    per_page = 14
+    start_idx = page * per_page
+    end_idx = start_idx + per_page
+    page_languages = lang_list[start_idx:end_idx]
     
     keyboard = InlineKeyboardMarkup(row_width=2)
     
-    # Додаємо кнопки мов
+    # Створюємо кнопки по 2 в рядку
     for i in range(0, len(page_languages), 2):
         row_buttons = []
         for j in range(2):
             if i + j < len(page_languages):
                 code, name = page_languages[i + j]
-                button_text = name if len(name) <= 22 else name[:19] + "..."
+                # Обрізаємо назву якщо довга
+                if len(name) > 20:
+                    button_text = name[:17] + "..."
+                else:
+                    button_text = name
                 row_buttons.append(InlineKeyboardButton(button_text, callback_data=f"lang_{code}"))
-        keyboard.row(*row_buttons)
+        
+        if len(row_buttons) == 2:
+            keyboard.row(row_buttons[0], row_buttons[1])
+        elif len(row_buttons) == 1:
+            keyboard.row(row_buttons[0])
     
-    # Навігаційні кнопки
-    if len(display_languages) > max_per_page:
+    # Навігаційні кнопки якщо потрібно
+    total_pages = (len(lang_list) + per_page - 1) // per_page
+    if total_pages > 1:
         nav_buttons = []
         if page > 0:
-            nav_buttons.append(InlineKeyboardButton("⬅️ Попередні", callback_data=f"lang_page_{page-1}"))
-        if end_idx < len(display_languages):
-            nav_buttons.append(InlineKeyboardButton("Наступні ➡️", callback_data=f"lang_page_{page+1}"))
+            nav_buttons.append(InlineKeyboardButton("◀️ Назад", callback_data=f"lang_page_{page-1}"))
+        if page + 1 < total_pages:
+            nav_buttons.append(InlineKeyboardButton("Вперед ▶️", callback_data=f"lang_page_{page+1}"))
+        
         if nav_buttons:
             keyboard.row(*nav_buttons)
-            
-        # Індикатор сторінки
-        total_pages = (len(display_languages) - 1) // max_per_page + 1
-        keyboard.row(InlineKeyboardButton(f"Сторінка {page + 1}/{total_pages}", callback_data="page_info"))
+        
+        # Показуємо номер сторінки
+        keyboard.row(InlineKeyboardButton(f"📄 {page + 1} / {total_pages}", callback_data="page_info"))
     
     return keyboard
 
