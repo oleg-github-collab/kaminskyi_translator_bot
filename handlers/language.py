@@ -150,6 +150,14 @@ async def handle_language_pagination(callback: types.CallbackQuery, state: FSMCo
         logger.error(f"❌ ПОМИЛКА в handle_language_pagination: {str(e)}")
         await callback.answer("⚠️ Помилка")
 
+async def handle_page_info(callback: types.CallbackQuery, state: FSMContext):
+    """Обробка натискання на індикатор сторінки"""
+    try:
+        await callback.answer("ℹ️ Це індикатор поточної сторінки")
+    except Exception as e:
+        logger.error(f"❌ ПОМИЛКА в handle_page_info: {str(e)}")
+        await callback.answer()
+
 def register_handlers_language(dp):
     """РЕЄСТРАЦІЯ HANDLER'ІВ МОВ З ПРАВИЛЬНИМИ ФІЛЬТРАМИ"""
     logger.info("=== РЕЄСТРАЦІЯ HANDLER'ІВ LANGUAGE ===")
@@ -177,5 +185,13 @@ def register_handlers_language(dp):
         state=[TranslationStates.waiting_for_source_language, TranslationStates.waiting_for_target_language]
     )
     logger.info("✅ Зареєстровано handle_language_pagination")
+    
+    # Handler для page_info
+    dp.register_callback_query_handler(
+        handle_page_info,
+        lambda c: c.data == "page_info",
+        state=[TranslationStates.waiting_for_source_language, TranslationStates.waiting_for_target_language]
+    )
+    logger.info("✅ Зареєстровано handle_page_info")
     
     logger.info("=== УСІ HANDLER'И LANGUAGE ЗАРЕЄСТРОВАНО ===")

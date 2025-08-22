@@ -34,9 +34,29 @@ async def universal_callback_handler(callback: types.CallbackQuery, state: FSMCo
         if callback_data and callback_data.startswith("model_"):
             return await handle_model_selection(callback, state)
         
-        # 2. ВИБІР МОВИ
+        # 2. ВИБІР МОВИ - делегуємо до правильних обробників
+        elif callback_data and callback_data.startswith("lang_page_"):
+            # Пагінація мов
+            from handlers.language import handle_language_pagination
+            return await handle_language_pagination(callback, state)
+        elif callback_data == "page_info":
+            # Інформація про сторінку
+            from handlers.language import handle_page_info
+            await handle_page_info(callback, state)
+            return True
         elif callback_data and callback_data.startswith("lang_"):
-            return await handle_language_selection(callback, state)
+            # Вибір мови
+            current_state = await state.get_state()
+            if "waiting_for_source_language" in str(current_state):
+                from handlers.language import choose_source_language
+                await choose_source_language(callback, state)
+                return True
+            elif "waiting_for_target_language" in str(current_state):
+                from handlers.language import choose_target_language  
+                await choose_target_language(callback, state)
+                return True
+            else:
+                return await handle_language_selection(callback, state)
         
         # 3. ПЛАТІЖНІ CALLBACK'И
         elif callback_data in ["process_payment", "payment_done", "upload_another", "payment_help"]:
@@ -130,9 +150,9 @@ async def handle_model_selection(callback: types.CallbackQuery, state: FSMContex
             parse_mode="HTML"
         )
         
-        # Показуємо клавіатуру мов для вибраної моделі
+        # Показуємо клавіатуру мов для вибраної моделі  
         from keyboards.inline import get_language_keyboard
-        keyboard = get_language_keyboard(model)
+        keyboard = get_language_keyboard(model, page=0)
         await callback.message.answer("Оберіть мову оригіналу:", reply_markup=keyboard)
         
         logger.info(f"✅ МОДЕЛЬ {model} успішно обрана для користувача {user_id}")
