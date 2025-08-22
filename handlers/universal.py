@@ -118,15 +118,22 @@ async def handle_model_selection(callback: types.CallbackQuery, state: FSMContex
         # Відправляємо повідомлення про вибір мови
         model_name = "Kaminskyi Basic" if model == "basic" else "Kaminskyi Epic"
         await callback.message.answer(f"✅ Обрано модель: {model_name}")
+        
+        # Показуємо кількість доступних мов залежно від моделі
+        from handlers.language import get_supported_languages
+        supported_langs = get_supported_languages(model)
+        lang_count = len(supported_langs)
+        
         await callback.message.answer(
-            "<b>Крок 2/5:</b> Оберіть мову оригіналу:\n"
-            "🌍 Доступно 130+ мов",
+            f"<b>Крок 2/5:</b> Оберіть мову оригіналу:\n"
+            f"🌍 Доступно {lang_count} мов",
             parse_mode="HTML"
         )
         
-        # Меню вибору мов
-        keyboard = create_language_menu_keyboard()
-        await callback.message.answer("Оберіть категорію мов:", reply_markup=keyboard)
+        # Показуємо клавіатуру мов для вибраної моделі
+        from keyboards.inline import get_language_keyboard
+        keyboard = get_language_keyboard(model)
+        await callback.message.answer("Оберіть мову оригіналу:", reply_markup=keyboard)
         
         logger.info(f"✅ МОДЕЛЬ {model} успішно обрана для користувача {user_id}")
         return True

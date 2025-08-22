@@ -6,12 +6,23 @@ from typing import Optional, Dict
 
 logger = logging.getLogger(__name__)
 
+def validate_language_for_otranslator(lang_code: str) -> bool:
+    """Перевірити чи підтримує O*Translator вказану мову"""
+    return lang_code.upper() in config.OTRANSLATOR_LANGUAGES
+
 def translate_file_otranslator(file_path: str, source_lang: str, target_lang: str, 
                               model: str = "gemini-2.5-flash") -> Optional[str]:
     """
     Translate file using O*Translator API with formatting preservation
     """
     try:
+        # Валідація мов
+        if not validate_language_for_otranslator(target_lang):
+            raise Exception(f"Мова {target_lang} не підтримується O*Translator API")
+        
+        if not validate_language_for_otranslator(source_lang):
+            raise Exception(f"Мова {source_lang} не підтримується O*Translator API")
+        
         headers = {
             "Authorization": f"Bearer {config.OTRANSLATOR_API_KEY}"
         }

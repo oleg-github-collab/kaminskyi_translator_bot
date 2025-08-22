@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import DEEPL_LANGUAGES, MODELS
+from config import DEEPL_LANGUAGES, OTRANSLATOR_LANGUAGES, COMMON_LANGUAGES, MODELS
 
 def get_model_keyboard(user_lang: str = "en"):
     """Клавіатура вибору моделі перекладу"""
@@ -10,22 +10,56 @@ def get_model_keyboard(user_lang: str = "en"):
     )
     return keyboard
 
-def get_language_keyboard():
-    """Клавіатура вибору мови"""
+def get_language_keyboard(model="basic", max_per_page=16, page=0):
+    """Клавіатура вибору мови з пагінацією"""
+    # Вибираємо мови залежно від моделі
+    if model == "basic":
+        languages = DEEPL_LANGUAGES
+    elif model == "epic":
+        languages = OTRANSLATOR_LANGUAGES
+    else:
+        languages = COMMON_LANGUAGES
+    
+    # Створюємо список з прапорами
+    display_languages = []
+    for code in languages.keys():
+        display_name = COMMON_LANGUAGES.get(code, languages[code])
+        display_languages.append((code, display_name))
+    
+    # Сортування
+    display_languages.sort(key=lambda x: x[1])
+    
+    # Пагінація
+    start_idx = page * max_per_page
+    end_idx = start_idx + max_per_page
+    page_languages = display_languages[start_idx:end_idx]
+    
     keyboard = InlineKeyboardMarkup(row_width=2)
-    # Основні мови для тестування
-    keyboard.add(
-        InlineKeyboardButton("🇺🇦 Українська", callback_data="lang_UK"),
-        InlineKeyboardButton("🇬🇧 English", callback_data="lang_EN")
-    )
-    keyboard.add(
-        InlineKeyboardButton("🇩🇪 Deutsch", callback_data="lang_DE"),
-        InlineKeyboardButton("🇫🇷 Français", callback_data="lang_FR")
-    )
-    keyboard.add(
-        InlineKeyboardButton("🇪🇸 Español", callback_data="lang_ES"),
-        InlineKeyboardButton("🇵🇱 Polski", callback_data="lang_PL")
-    )
+    
+    # Додаємо кнопки мов
+    for i in range(0, len(page_languages), 2):
+        row_buttons = []
+        for j in range(2):
+            if i + j < len(page_languages):
+                code, name = page_languages[i + j]
+                button_text = name if len(name) <= 22 else name[:19] + "..."
+                row_buttons.append(InlineKeyboardButton(button_text, callback_data=f"lang_{code}"))
+        keyboard.row(*row_buttons)
+    
+    # Навігаційні кнопки
+    if len(display_languages) > max_per_page:
+        nav_buttons = []
+        if page > 0:
+            nav_buttons.append(InlineKeyboardButton("⬅️ Попередні", callback_data=f"lang_page_{page-1}"))
+        if end_idx < len(display_languages):
+            nav_buttons.append(InlineKeyboardButton("Наступні ➡️", callback_data=f"lang_page_{page+1}"))
+        if nav_buttons:
+            keyboard.row(*nav_buttons)
+            
+        # Індикатор сторінки
+        total_pages = (len(display_languages) - 1) // max_per_page + 1
+        keyboard.row(InlineKeyboardButton(f"Сторінка {page + 1}/{total_pages}", callback_data="page_info"))
+    
     return keyboard
 
 def get_continue_keyboard(user_lang: str = "en"):

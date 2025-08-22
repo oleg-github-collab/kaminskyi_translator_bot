@@ -6,10 +6,21 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+def validate_language_for_deepl(lang_code: str) -> bool:
+    """Перевірити чи підтримує DeepL вказану мову"""
+    return lang_code.upper() in config.DEEPL_LANGUAGES
+
 def translate_text_deepl(text: str, target_lang: str, source_lang: str = None) -> str:
     """Translate text using DeepL API"""
     if not text.strip():
         return ""
+    
+    # Валідація мов
+    if not validate_language_for_deepl(target_lang):
+        raise Exception(f"Мова {target_lang} не підтримується DeepL API")
+    
+    if source_lang and not validate_language_for_deepl(source_lang):
+        raise Exception(f"Мова {source_lang} не підтримується DeepL API")
         
     url = "https://api-free.deepl.com/v2/translate"
     headers = {"Authorization": f"DeepL-Auth-Key {config.DEEPL_API_KEY}"}
